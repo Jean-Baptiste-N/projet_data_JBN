@@ -1,28 +1,28 @@
 # 🏥 Analyse des Données Hospitalières - Projet JBN
 
-## 🎯 Vision du Projet
+## 🎯 Vision du projet
 Une approche data-driven pour révolutionner la planification hospitalière en France. Notre projet vise à transformer la gestion des capacités hospitalières en passant d'une approche financière à une approche basée sur les besoins réels de la population.
 
-## 🎯 Objectifs Principaux
+## 🎯 Objectifs principaux
 - 📊 Analyser l'évolution des besoins hospitaliers (2018-2022)
 - 🔮 Prédire les tendances futures (2023-2025)
 - 🚨 Identifier les signaux d'alerte précoces
 - 🎯 Créer un outil d'aide à la décision pour les ARS
 
-## 📈 Fonctionnalités Clés
+## 📈 Fonctionnalités clés
 ### Analyse Descriptive
 - 📉 Évolution temporelle des hospitalisations
 - 🗺️ Distribution géographique des cas
 - 👥 Analyse démographique des patients
 - ⏱️ Durées moyennes de séjour
 
-### Analyse Prédictive
+### Analyse prédictive
 - 📈 Modélisation des tendances futures
 - 🎯 Identification des zones de tension
 - 🔄 Patterns saisonniers
 - 🚨 Système d'alerte précoce
 
-## 🛠️ Technologies Utilisées
+## 🛠️ Technologies utilisées
 - 🐍 Python (Data Science)
 - 📊 Streamlit (Interface utilisateur)
 - 🗄️ DBT & BigQuery (Data Warehouse)
@@ -42,7 +42,7 @@ Une approche data-driven pour révolutionner la planification hospitalière en F
 - 📊 Données hospitalières publiques
 - 👥 Données démographiques INSEE
 
-## 🎯 Impact Attendu
+## 🎯 Impact attendu
 
 ### Pour les ARS
 - 📈 Meilleure anticipation des besoins
@@ -65,14 +65,8 @@ Une approche data-driven pour révolutionner la planification hospitalière en F
 - 🔄 Intégration de données en temps réel
 - 📱 Application mobile pour les décideurs
 
-## 👥 Équipe & Contact
+## 👥 Équipe & contact
 Le Wagon projet 2024
-
-## 📜 Licence
-[Type de licence]
-
-## 🤝 Contribution
-Nous accueillons les contributions ! Voir `CONTRIBUTING.md` pour les détails.
 
 ## 📚 Documentation
 Pour plus de détails, consultez notre [Wiki](lien_vers_wiki)
