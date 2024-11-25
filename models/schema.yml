@@ -1,6 +1,25 @@
 
 version: 2
 
+sources:
+  - name: raw
+    schema : morbidite_h 
+    tables: 
+      - name: sales
+        identifier : raw_gz_sales
+        description : sales of Greenweez / we have one row per product_id found in each orders_id
+        columns :
+          - name: date_date
+            description: Date de la vente
+          - name: orders_id
+            description: ID unique pour chaque commande
+          - name: products_id
+            description: ID unique pour chaque produit
+          - name: revenue
+            description: Revenu généré par la commande
+          - name: quantity
+            description: Quantité vendue
+
 models:
     - name: my_first_dbt_model
       description: "A starter dbt model"
