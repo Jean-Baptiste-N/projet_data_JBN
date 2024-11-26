@@ -1,40 +1,25 @@
-
 version: 2
 
 sources:
-  - name: raw
-    schema : morbidite_h 
-    tables: 
-      - name: sales
-        identifier : raw_gz_sales
-        description : sales of Greenweez / we have one row per product_id found in each orders_id
-        columns :
-          - name: date_date
-            description: Date de la vente
-          - name: orders_id
-            description: ID unique pour chaque commande
-          - name: products_id
-            description: ID unique pour chaque produit
-          - name: revenue
-            description: Revenu généré par la commande
-          - name: quantity
-            description: Quantité vendue
+  - name: morbidite_h
+    schema: morbidite_h
+    tables:
+      - name: nombre_morbidites
+        identifier: tableau_1
+        description: ""
+      - name: duree_sejours
+        identifier: tableau_2
+        description: ""
+      - name: taux_recours
+        identifier: tableau_3
+        description: ""
 
 models:
-    - name: my_first_dbt_model
-      description: "A starter dbt model"
-      columns:
-          - name: id
-            description: "The primary key for this table"
-            tests:
-                - unique
-                - not_null
+  - name: stg_nombre_morbidites
+    description: ""
 
-    - name: my_second_dbt_model
-      description: "A starter dbt model"
-      columns:
-          - name: id
-            description: "The primary key for this table"
-            tests:
-                - unique
-                - not_null
+  - name: stg_duree_sejours
+    description: ""
+
+  - name: stg_taux_recours
+    description: ""
