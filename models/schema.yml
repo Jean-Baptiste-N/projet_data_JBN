@@ -5,15 +5,13 @@ sources:
     schema: morbidite_h
     tables:
       - name: taux_recours
-        identifier: tranche_age_intermediate
+        identifier: tranche_age_hospi_clean
         description: "test"
+      - name: duree_sejours
+        identifier: duree_hospi_clean
+        description: "test"
+      - name: nombre_hospit
+        identifier: nbr_hospi_clean
+        description: 'test'
 
-models:
-  - name: stg_nombre_morbidites
-    description: ""
 
-  - name: stg_duree_sejours
-    description: ""
-
-  - name: stg_taux_recours
-    description: ""
