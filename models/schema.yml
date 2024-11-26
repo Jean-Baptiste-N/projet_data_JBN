@@ -4,15 +4,9 @@ sources:
   - name: morbidite_h
     schema: morbidite_h
     tables:
-      - name: nombre_morbidites
-        identifier: tableau_1
-        description: ""
-      - name: duree_sejours
-        identifier: tableau_2
-        description: ""
       - name: taux_recours
-        identifier: tableau_3
-        description: ""
+        identifier: tranche_age_intermediate
+        description: "test"
 
 models:
   - name: stg_nombre_morbidites
