@@ -35,9 +35,10 @@ clean-targets: # directories to be removed by `dbt clean`
 
 models:
   medical_analysis:
-    staging:
-      +materialized: view
-    intermediate:
-      +materialized: table
-    marts:
-      +materialized: table
+    # Applies to all files under models
+      staging:
+        +materialized: view
+      intermediate:
+        +materialized: table
+      mart: 
+        +materialized: table
