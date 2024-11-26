@@ -14,12 +14,4 @@ sources:
         identifier: nbr_hospi_clean
         description: 'test'
 
-models:
-  - name: stg_nombre_morbidites
-    description: ""
 
-  - name: stg_duree_sejours
-    description: ""
-
-  - name: stg_taux_recours
-    description: ""

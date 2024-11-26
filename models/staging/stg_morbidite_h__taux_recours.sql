@@ -9,16 +9,13 @@ source as (
 renamed as (
 
     select
-        departement,
-        cle_unique,
+        niveau,
         sexe,
         pathologie,
         code_pathologie,
         nom_pathologie,
-        year,
+        annee,
         region,
-        code_region,
-        nom_region,
         tranche_age_0_1,
         tranche_age_1_4,
         tranche_age_5_14,

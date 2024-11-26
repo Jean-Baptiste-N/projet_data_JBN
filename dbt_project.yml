@@ -38,6 +38,10 @@ models:
     # Applies to all files under models
       staging:
         +materialized: view
+      taux_recours_decoup:
+        +materialized: view
+      taux_recours_par_annee:
+        +materialized: table
       intermediate:
         +materialized: table
       mart: 
