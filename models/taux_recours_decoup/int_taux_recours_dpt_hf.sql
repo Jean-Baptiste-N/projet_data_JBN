@@ -1,6 +1,6 @@
 SELECT 
 niveau,
-CONCAT(region,"_",code_pathologie) as cle_unique,
+CONCAT(region,"_",code_pathologie,"_",sexe) as cle_unique,
 sexe,
 pathologie,
 SAFE_CAST(NULLIF(code_pathologie, 'ND') AS INT64) AS code_pathologie,

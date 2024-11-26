@@ -1,6 +1,6 @@
 SELECT 
 niveau,
-CONCAT(region,"_",code_pathologie) as cle_unique,
+CONCAT(region,"_",code_pathologie,"_",sexe) as cle_unique,
 sexe,
 pathologie,
 SAFE_CAST(NULLIF(code_pathologie, 'ND') AS INT64) AS code_pathologie,
@@ -29,3 +29,4 @@ SPLIT(region, " - ")[SAFE_OFFSET(1)] AS nom_departement,
   AND nom_pathologie != 'TOTAL TOUTES CAUSES'
   AND (pathologie NOT LIKE '%000%'OR pathologie LIKE "%Covid%")
   AND sexe LIKE "Ensemble"
+ORDER BY cle_unique
