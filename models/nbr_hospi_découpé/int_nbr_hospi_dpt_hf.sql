@@ -17,6 +17,5 @@ WHERE NOT (region LIKE '3 - France%' OR region LIKE '1 - France%')
     AND niveau LIKE "Départements"
     AND nom_pathologie != 'TOTAL TOUTES CAUSES'
     AND (pathologie NOT LIKE '%000%'OR pathologie LIKE "%Covid%")
-    AND tranche_age NOT LIKE "Tous âges confondus"
     AND sexe NOT LIKE "Ensemble"
 ORDER BY cle_unique
