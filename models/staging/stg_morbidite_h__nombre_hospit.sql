@@ -5,7 +5,7 @@ with
     renamed as (
 
         select
-            departement,
+            departement as niveau,
             sexe,
             year,
             pathologie,

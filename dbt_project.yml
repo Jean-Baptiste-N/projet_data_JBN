@@ -38,11 +38,28 @@ models:
     # Applies to all files under models
       staging:
         +materialized: view
-      taux_recours_decoup:
+      taux_recours_découpé:
         +materialized: view
       taux_recours_par_annee:
         +materialized: table
+      taux_recours_mart: 
+        +materialized: table
+
+      nbr_hospi_découpé:
+        +materialized: view
+      nbr_hospi_par_annee:
+        +materialized: table
+      nbr_hospi_par_tranche_age:
+        +materialized: table
+      nbr_hospi_mart: 
+        +materialized: table
+
+
+
+
+
+
       intermediate:
         +materialized: table
-      mart: 
-        +materialized: table
+
+
