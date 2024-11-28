@@ -52,7 +52,7 @@ def load_data():
         ''').to_dataframe()
 
         df_duree_hospi = client.query('''
-            SELECT * FROM `projet-jbn-data-le-wagon.morbidite_h.duree_hospi_dpt_intermediate`
+            SELECT * FROM `projet-jbn-data-le-wagon.duree_hospitalisation_par_patho.duree_hospi_region_et_dpt_clean_classifie`
         ''').to_dataframe()
 
         df_tranche_age_hospi = client.query('''
@@ -80,16 +80,13 @@ def calculate_main_metrics(df_nbr_hospi, df_capacite_hospi):
         metrics[f"hospi_{year}"] = total_hospi
 
     # Calcul des lits disponibles par année
+    # Calcul des lits disponibles par année
     lits_disponibles = df_capacite_hospi.groupby('year')['total_lit_hospi_complete'].sum().reset_index()
     for year in range(2018, 2023):
-        total_lits = lits_disponibles[lits_disponibles['year'] == year]['total_lit_hospi_complete'].sum()
-        # Vérification des valeurs nulles ou manquantes
-        if pd.isna(total_lits):
-            total_lits = 0
-        metrics[f"lits_{year}"] = total_lits
+        metrics[f"lits_{year}"] = lits_disponibles[lits_disponibles['year'] == year]['total_lit_hospi_complete'].sum()
     
     return metrics
-
+    
 placeholder = st.empty()
 with st.spinner('Chargement des données...'):
     placeholder.image("ezgif.com-crop.gif", width=300)
@@ -232,7 +229,6 @@ if df_nbr_hospi is not None:
                 value=value_2022_lits,
                 delta=f"{delta_2022_lits:.2f}%"
             )
-
         # Tendances temporelles
         st.subheader("📈 Évolution temporelle")
         col1, col2 = st.columns(2)
