@@ -6,7 +6,7 @@ WITH transposed_data AS (
         pathologie,
         code_pathologie,
         nom_pathologie,
-        region,
+        departement,
         code_departement,
         nom_departement,
         CASE WHEN year = '2018-12-31' THEN tx_brut_tt_age_pour_mille END AS tx_brut_tt_age_pour_mille_2018,
@@ -33,7 +33,7 @@ SELECT
     pathologie,
     code_pathologie,
     nom_pathologie,
-    region,
+    departement,
     code_departement,
     nom_departement,
     MAX(tx_brut_tt_age_pour_mille_2018) AS tx_brut_tt_age_pour_mille_2018,
@@ -52,5 +52,5 @@ SELECT
     MAX(tx_standard_tt_age_pour_mille_2022) AS tx_standard_tt_age_pour_mille_2022,
     MAX(indice_comparatif_tt_age_percent_2022) AS indice_comparatif_tt_age_percent_2022
 FROM transposed_data
-GROUP BY cle_unique, niveau, sexe, pathologie, code_pathologie, nom_pathologie, region, code_departement, nom_departement
+GROUP BY cle_unique, niveau, sexe, pathologie, code_pathologie, nom_pathologie, departement, code_departement, nom_departement
 ORDER BY cle_unique
