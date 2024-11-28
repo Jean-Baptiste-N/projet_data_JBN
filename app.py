@@ -82,45 +82,32 @@ st.title("🏥 Dashboard d'Analyse Hospitalière")
 
 # Fonction de chargement des données avec gestion d'erreurs
 @st.cache_resource
-def load_data():
+def fetch_data():
     try:
-        progress_text = "Chargement des données en cours. Veuillez patienter..."
-        progress_bar = st.progress(0, text=progress_text)
-        
         # Chargement des secrets
-        progress_bar.progress(10, text="Initialisation de la connexion...")
         gcp_service_account = st.secrets["gcp_service_account"]
         client = bigquery.Client.from_service_account_info(gcp_service_account)
         
-        # Chargement des datasets avec progression
-        progress_bar.progress(30, text="Chargement des données d'hospitalisation...")
+        # Chargement des datasets
         df_nbr_hospi = client.query('''
             SELECT * FROM `projet-jbn-data-le-wagon.morbidite_h.nbr_hospi_intermediate`
         ''').to_dataframe()
         
-        progress_bar.progress(50, text="Chargement des durées d'hospitalisation...")
         df_duree_hospi = client.query('''
             SELECT * FROM `projet-jbn-data-le-wagon.duree_hospitalisation_par_patho.duree_hospi_region_et_dpt_clean_classifie`
         ''').to_dataframe()
         
-        progress_bar.progress(70, text="Chargement des données par tranche d'âge...")
         df_tranche_age_hospi = client.query('''
             SELECT * FROM `projet-jbn-data-le-wagon.morbidite_h.tranche_age_intermediate`
         ''').to_dataframe()
         
-        progress_bar.progress(90, text="Chargement des capacités hospitalières...")
         df_capacite_hospi = client.query('''
             SELECT * FROM `projet-jbn-data-le-wagon.capacite_services_h.jointure_capa_hospi_dureehospi_KPIs`
         ''').to_dataframe()
         
-        progress_bar.progress(100, text="Chargement terminé!")
-        time.sleep(1)  # Afficher brièvement le message de succès
-        progress_bar.empty()
-        
         return df_nbr_hospi, df_duree_hospi, df_tranche_age_hospi, df_capacite_hospi, None
 
     except Exception as e:
-        st.error(f"Erreur détaillée: {str(e)}")
         return None, None, None, None, str(e)
 
 # Fonction pour calculer les métriques de la page principale
@@ -139,24 +126,67 @@ def calculate_main_metrics(df_nbr_hospi, df_capacite_hospi):
         metrics[f"lits_{year}"] = lits_disponibles[lits_disponibles['year'] == year]['total_lit_hospi_complete'].sum()
     
     return metrics
-    
-placeholder = st.empty()
-with st.spinner('Chargement des données...'):
-    placeholder.image("ezgif.com-crop.gif", width=300)
-    df_nbr_hospi, df_duree_hospi, df_tranche_age_hospi, df_capacite_hospi, error = load_data()
-    main_metrics = calculate_main_metrics(df_nbr_hospi, df_capacite_hospi)
 
-    if error:
-        st.error(f"Erreur lors du chargement des données: {error}")
+# Interface de chargement
+def load_with_progress():
+    # Centrer le GIF avec du CSS personnalisé
+    st.markdown("""
+        <style>
+        .loading-gif {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    # Créer un conteneur pour le GIF centré
+    gif_container = st.container()
+    with gif_container:
+        st.markdown('<div class="loading-gif">', unsafe_allow_html=True)
+        gif_placeholder = st.empty()
+        gif_placeholder.image("ezgif.com-crop.gif", width=300)
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Créer la barre de progression séparément
+    progress_container = st.container()
+    with progress_container:
+        progress_bar = st.progress(0, text="Initialisation du chargement...")
+    
+    try:
+        # Chargement des données
+        progress_bar.progress(10, text="Chargement des données...")
+        df_nbr_hospi, df_duree_hospi, df_tranche_age_hospi, df_capacite_hospi, error = fetch_data()
+        
+        if error:
+            gif_placeholder.empty()
+            progress_bar.empty()
+            st.error(f"Erreur lors du chargement des données: {error}")
+            st.stop()
+        
+        # Calcul des métriques
+        progress_bar.progress(80, text="Calcul des métriques...")
+        metrics = calculate_main_metrics(df_nbr_hospi, df_capacite_hospi)
+        
+        progress_bar.progress(100, text="Chargement terminé!")
+        time.sleep(0.5)
+        
+        # Clear loading interface
+        gif_placeholder.empty()
+        progress_bar.empty()
+        
+        return df_nbr_hospi, df_duree_hospi, df_tranche_age_hospi, df_capacite_hospi, metrics
+        
+    except Exception as e:
+        gif_placeholder.empty()
+        progress_bar.empty()
+        st.error(f"Erreur inattendue: {str(e)}")
         st.stop()
 
-# Attendre 5 secondes avant de supprimer le GIF
-time.sleep(5)
-placeholder.empty()
+# Chargement des données avec interface de progression
+df_nbr_hospi, df_duree_hospi, df_tranche_age_hospi, df_capacite_hospi, main_metrics = load_with_progress()
 
-# Calcul des métriques de la page principale
-with open("departements-version-simplifiee.geojson", "r", encoding="utf-8") as f:
-    geojson_data = json.load(f)
 # Suite du code uniquement si les données sont chargées correctement
 if df_nbr_hospi is not None:
     # Sidebar pour les filtres globaux
