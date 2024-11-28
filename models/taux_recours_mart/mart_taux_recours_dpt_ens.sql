@@ -5,7 +5,7 @@ SELECT
     pathologie,
     code_pathologie,
     nom_pathologie,
-    region,
+    departement,
     code_departement,
     nom_departement,
     ROUND(safe_divide(tx_brut_tt_age_pour_mille_2019 - tx_brut_tt_age_pour_mille_2018,tx_brut_tt_age_pour_mille_2018) ,2) as permille_evolution_2019_tx_brut_tt_age,

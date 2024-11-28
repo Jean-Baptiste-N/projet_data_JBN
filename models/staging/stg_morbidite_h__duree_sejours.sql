@@ -9,7 +9,7 @@ source as (
 renamed as (
 
     select
-        departement,
+        departement as niveau,
         annee,
         year,
         pathologie,
