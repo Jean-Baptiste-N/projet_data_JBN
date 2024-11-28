@@ -163,6 +163,7 @@ if df_nbr_hospi is not None:
     st.sidebar.header("📊 Filtres")
 
     # Filtre années
+    st.sidebar.subheader("🗓️ Période")
     years = sorted(df_nbr_hospi['year'].unique())
     select_all_years = st.sidebar.checkbox("Sélectionner toutes les années", value=True)
     if select_all_years:
@@ -170,19 +171,85 @@ if df_nbr_hospi is not None:
     else:
         selected_years = st.sidebar.multiselect("Sélectionner les années", years)
 
-    # Filtre départements
-    departments = sorted(df_nbr_hospi['nom_departement'].unique())
-    select_all_departments = st.sidebar.checkbox("Sélectionner tous les départements", value=True)
-    if select_all_departments:
-        selected_departments = st.sidebar.multiselect("Sélectionner les départements", departments, default=departments)
+    # Filtre départements et régions
+    st.sidebar.subheader("📍 Localisation")
+    location_type = st.sidebar.radio("Niveau géographique", ["Départements", "Régions"])
+    
+    if location_type == "Départements":
+        departments = sorted(df_nbr_hospi['nom_departement'].unique())
+        select_all_departments = st.sidebar.checkbox("Sélectionner tous les départements", value=True)
+        if select_all_departments:
+            selected_departments = st.sidebar.multiselect("Sélectionner les départements", departments, default=departments)
+        else:
+            selected_departments = st.sidebar.multiselect("Sélectionner les départements", departments)
     else:
-        selected_departments = st.sidebar.multiselect("Sélectionner les départements", departments)
+        regions = sorted(df_nbr_hospi['nom_region'].unique())
+        select_all_regions = st.sidebar.checkbox("Sélectionner toutes les régions", value=True)
+        if select_all_regions:
+            selected_regions = st.sidebar.multiselect("Sélectionner les régions", regions, default=regions)
+        else:
+            selected_regions = st.sidebar.multiselect("Sélectionner les régions", regions)
+        selected_departments = departments  # Garder tous les départements pour la compatibilité
 
-    # Appliquer les filtres aux DataFrames pour les onglets autres que "Vue Générale"
-    df_nbr_hospi_filtered = df_nbr_hospi[df_nbr_hospi['year'].isin(selected_years) & df_nbr_hospi['nom_departement'].isin(selected_departments)]
-    df_duree_hospi_filtered = df_duree_hospi[df_duree_hospi['year'].isin(selected_years) & df_duree_hospi['nom_departement_region'].isin(selected_departments)]
-    df_tranche_age_hospi_filtered = df_tranche_age_hospi[df_tranche_age_hospi['year'].isin(selected_years) & df_tranche_age_hospi['nom_region'].isin(selected_departments)]
-    df_capacite_hospi_filtered = df_capacite_hospi[df_capacite_hospi['year'].isin(selected_years) & df_capacite_hospi['nom_departement'].isin(selected_departments)]
+    # Filtre pathologies
+    st.sidebar.subheader("🏥 Pathologies")
+    n_pathologies = st.sidebar.slider("Nombre de pathologies à afficher", 5, 50, 20)
+    search_pathology = st.sidebar.text_input("Rechercher une pathologie", "")
+    
+    # Filtre tranches d'âge
+    st.sidebar.subheader("👥 Tranches d'âge")
+    age_groups = {
+        'tranche_age_1_4': '1-4 ans',
+        'tranche_age_5_14': '5-14 ans',
+        'tranche_age_15_24': '15-24 ans',
+        'tranche_age_25_34': '25-34 ans',
+        'tranche_age_35_44': '35-44 ans',
+        'tranche_age_45_54': '45-54 ans',
+        'tranche_age_55_64': '55-64 ans',
+        'tranche_age_65_74': '65-74 ans',
+        'tranche_age_75_84': '75-84 ans',
+        'tranche_age_85_et_plus': '85 ans et plus'
+    }
+    selected_age_groups = st.sidebar.multiselect(
+        "Sélectionner les tranches d'âge",
+        options=list(age_groups.values()),
+        default=list(age_groups.values())
+    )
+    
+    # Option de comparaison
+    st.sidebar.subheader("📊 Comparaison")
+    show_national_avg = st.sidebar.checkbox("Afficher la moyenne nationale", value=True)
+
+    # Appliquer les filtres aux DataFrames
+    df_nbr_hospi_filtered = df_nbr_hospi(
+        df_nbr_hospi['year'].isin(selected_years) & 
+        df_nbr_hospi['nom_departement'].isin(selected_departments)
+    )
+    
+    df_duree_hospi_filtered = df_duree_hospi(
+        df_duree_hospi['year'].isin(selected_years) & 
+        df_duree_hospi['nom_departement_region'].isin(selected_departments)
+    )
+    
+    df_tranche_age_hospi_filtered = df_tranche_age_hospi(
+        df_tranche_age_hospi['year'].isin(selected_years) & 
+        df_tranche_age_hospi['nom_region'].isin(selected_departments)
+    )
+    
+    if search_pathology:
+        df_nbr_hospi_filtered = df_nbr_hospi_filtered(
+            df_nbr_hospi_filtered['nom_pathologie'].str.contains(search_pathology, case=False)
+        )
+        df_duree_hospi_filtered = df_duree_hospi_filtered(
+            df_duree_hospi_filtered['nom_pathologie'].str.contains(search_pathology, case=False)
+        )
+    
+    # Filtrer par tranches d'âge sélectionnées
+    age_columns = [k for k, v in age_groups.items() if v in selected_age_groups]
+    if age_columns:
+        df_tranche_age_hospi_filtered = df_tranche_age_hospi_filtered(
+            ['year', 'nom_region'] + age_columns
+        )
     
     # Onglets principaux
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
