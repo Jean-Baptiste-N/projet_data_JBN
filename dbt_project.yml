@@ -41,6 +41,18 @@ models:
       +schema: nbr_hospi_evolutions
       +materialized: table          
 
+    duree_sejours_découpé:
+      +schema: duree_sejours_decoupe
+      +materialized: view
+
+    duree_sejours_par_annee:
+      +schema: duree_sejours_par_annee
+      +materialized: view
+
+    duree_sejours_mart: 
+      +schema: duree_sejours_evolutions
+      +materialized: table
+
 
     taux_recours_découpé:
       +schema: taux_recours_decoupe
@@ -59,6 +71,10 @@ models:
       +schema: class_services_nbr_hospi
       +materialized: table
 
+    class_services_duree_sejours:
+      +schema: class_services_duree_sejours
+      +materialized: table
+    
     class_services_taux_recours:
       +schema: class_services_taux_recours
       +materialized: table
