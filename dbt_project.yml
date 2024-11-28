@@ -25,6 +25,10 @@ models:
     intermediate:
       +materialized: table
 
+    nbr_hospi_total:
+      +schema: nbr_hospi_total
+      +materialized: table
+
     nbr_hospi_découpé:
       +schema: nbr_hospi_decoupe
       +materialized: view
