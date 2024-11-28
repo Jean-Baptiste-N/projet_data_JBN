@@ -390,7 +390,6 @@ with tab5:
     
     with open("regions-version-simplifiee.geojson", "r", encoding="utf-8") as f:
         region_geojson = json.load(f)
-
     
     # Préparer les données de la carte
     dept_map_data, region_map_data = prepare_map_data(hospi_by_departement, hospi_by_region)
