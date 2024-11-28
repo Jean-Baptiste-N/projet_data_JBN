@@ -126,16 +126,17 @@ if df_nbr_hospi is not None:
 
     # Appliquer les filtres aux DataFrames pour les onglets autres que "Vue Générale"
     df_nbr_hospi_filtered = df_nbr_hospi[df_nbr_hospi['year'].isin(selected_years) & df_nbr_hospi['nom_departement'].isin(selected_departments)]
-    df_duree_hospi_filtered = df_duree_hospi[df_duree_hospi['year'].isin(selected_years) & df_duree_hospi['nom_departement'].isin(selected_departments)]
+    df_duree_hospi_filtered = df_duree_hospi[df_duree_hospi['year'].isin(selected_years) & df_duree_hospi['nom_departement_region'].isin(selected_departments)]
     df_tranche_age_hospi_filtered = df_tranche_age_hospi[df_tranche_age_hospi['year'].isin(selected_years) & df_tranche_age_hospi['nom_region'].isin(selected_departments)]
     df_capacite_hospi_filtered = df_capacite_hospi[df_capacite_hospi['year'].isin(selected_years) & df_capacite_hospi['nom_departement'].isin(selected_departments)]
     
     # Onglets principaux
-    tab1, tab2, tab3, tab4 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "📈 Vue Générale",
         "🗺️ Analyse Géographique",
         "🏥 Pathologies",
-        "👥 Démographie"
+        "👥 Démographie",
+        "Carte Géographique"
     ])
     
     # Vue Générale
@@ -259,9 +260,9 @@ if df_nbr_hospi is not None:
             st.plotly_chart(fig, use_container_width=True)
         
         with col2:
-            duree_by_departement = df_duree_hospi_filtered.groupby('nom_departement')['AVG_duree_hospi'].mean().reset_index()
+            duree_by_departement = df_duree_hospi_filtered.groupby('nom_departement_region')['AVG_duree_hospi'].mean().reset_index()
             duree_by_departement = duree_by_departement.sort_values(by='AVG_duree_hospi', ascending=True)
-            fig = px.bar(duree_by_departement, x='AVG_duree_hospi', y='nom_departement', 
+            fig = px.bar(duree_by_departement, x='AVG_duree_hospi', y='nom_departement_region', 
                         title='Durée moyenne des hospitalisations par département',
                         orientation='h')
             st.plotly_chart(fig, use_container_width=True)
@@ -309,4 +310,28 @@ if df_nbr_hospi is not None:
         fig = px.bar(recourse_by_age, x='Taux de recours', y='Tranche d\'âge', 
                     title='Taux de recours par tranche d\'âge',
                     orientation='h')
+        st.plotly_chart(fig, use_container_width=True)
+
+    with tab5:
+        st.subheader("🗺️ Carte des Hospitalisations par Département")
+
+    # Préparation des données pour la carte
+    # Exemple de données par département (ajustez selon vos données)
+        hospi_by_departement = df_nbr_hospi_filtered.groupby('nom_departement')['nbr_hospi'].sum().reset_index()
+
+    # Vous devez avoir les géolocalisations des départements sous forme de coordonnées ou de codes
+    # Si vous avez des codes de département, vous pouvez les utiliser pour une carte choroplèthe
+
+    # Exemple d'utilisation de `plotly.express.choropleth` pour afficher la carte
+        fig = px.choropleth(
+            hospi_by_departement,
+            locations='nom_departement',  # Nom du département
+            color='nbr_hospi',  # Nombre d'hospitalisations
+            hover_name='nom_departement',  # Affichage du nom du département au survol
+            color_continuous_scale="Viridis",  # Choix de la palette de couleurs
+            labels={'nbr_hospi': 'Nombre d\'hospitalisations'},
+            title="Répartition des hospitalisations par département"
+        )
+
+    # Afficher la carte
         st.plotly_chart(fig, use_container_width=True)

@@ -319,6 +319,12 @@ if df_nbr_hospi is not None:
 # Préparation des données pour la carte
 
 @st.cache_data
+def prepare_map_data(hospi_by_departement):
+    # Prepare a dictionary of data for map coloration
+    map_data_dict = dict(zip(hospi_by_departement['nom_departement'], hospi_by_departement['nbr_hospi']))
+    return map_data_dict
+
+@st.cache_data
 def prepare_map_data(hospi_by_departement, hospi_by_region):
     # Prepare dictionaries for both department and region data
     dept_map_data = dict(zip(hospi_by_departement['nom_departement'], hospi_by_departement['nbr_hospi']))
@@ -327,52 +333,31 @@ def prepare_map_data(hospi_by_departement, hospi_by_region):
 
 def generate_multi_level_map(dept_map_data, region_map_data, dept_geojson, region_geojson):
     # Création de la carte centrée sur la France
-    france_map = folium.Map(location=[46.603354, 1.888334], zoom_start=5.5)
+    france_map = folium.Map(location=[46.603354, 1.888334], zoom_start=6)
 
     # Choropleth pour les régions
-    region_choropleth = folium.Choropleth(
+    folium.Choropleth(
         geo_data=region_geojson,
         data=region_map_data,
         columns=['nom_departement', 'nbr_hospi'],
         key_on="feature.properties.nom",
         fill_color="YlOrRd",  # Different color scheme for regions
         fill_opacity=0.5,
-        line_opacity=0.2,  # Transparency of borders
-        line_weight=0.1,
+        line_opacity=0.2,
         legend_name="Hospitalisations par Région"
     ).add_to(france_map)
 
     # Choropleth pour les départements
-    dept_choropleth = folium.Choropleth(
+    folium.Choropleth(
         geo_data=dept_geojson,
         data=dept_map_data,
         columns=['nom_departement', 'nbr_hospi'],
         key_on="feature.properties.nom",
         fill_color="YlGnBu",
-        fill_opacity=0.5,
-        line_opacity=0.2,  # Transparency of borders
-        line_weight=0.1,
+        fill_opacity=0.3,
+        line_opacity=0.2,
         legend_name="Hospitalisations par Département"
     ).add_to(france_map)
-
-    # Ajout des tooltips pour les départements
-    for feature in dept_choropleth.geojson.data['features']:
-        dept_name = feature['properties']['nom']
-        nbr_hospi = dept_map_data.get(dept_name, 0)
-    
-    # Tooltip personnalisé
-
-        tooltip = folium.Tooltip(f"{dept_name}: {nbr_hospi} hospitalisations")
-        folium.GeoJson(
-            feature,
-            tooltip=tooltip,
-            style_function=lambda x: {
-            'color': 'blue',       # Couleur de la bordure
-            'weight': 0.5,         # Épaisseur de la bordure
-            'opacity': 0.2,        # Opacité de la bordure
-            'fillOpacity': 0       # Assurez-vous que cela ne couvre pas la carte de base
-        }
-        ).add_to(france_map)
 
     return france_map
 
