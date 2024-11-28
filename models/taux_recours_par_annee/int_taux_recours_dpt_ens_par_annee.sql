@@ -6,7 +6,7 @@ WITH transposed_data AS (
         pathologie,
         code_pathologie,
         nom_pathologie,
-        region,
+        departement,
         code_departement,
         nom_departement,
         -- Utilisation de CASE WHEN pour chaque métrique et année
@@ -34,7 +34,7 @@ SELECT
     pathologie,
     code_pathologie,
     nom_pathologie,
-    region,
+    departement,
     code_departement,
     nom_departement,
     MAX(tx_brut_tt_age_pour_mille_2018) AS tx_brut_tt_age_pour_mille_2018,
@@ -53,7 +53,7 @@ SELECT
     MAX(tx_standard_tt_age_pour_mille_2022) AS tx_standard_tt_age_pour_mille_2022,
     MAX(indice_comparatif_tt_age_percent_2022) AS indice_comparatif_tt_age_percent_2022
 FROM transposed_data
-GROUP BY cle_unique, niveau, sexe, pathologie, code_pathologie, nom_pathologie, region, code_departement, nom_departement
+GROUP BY cle_unique, niveau, sexe, pathologie, code_pathologie, nom_pathologie, departement, code_departement, nom_departement
 ORDER BY cle_unique
 
 
