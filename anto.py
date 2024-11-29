@@ -8,6 +8,7 @@ import time
 import folium
 from streamlit_folium import st_folium
 import json
+import pygwalker as pyg
 
 # Configuration de la page
 st.set_page_config(
@@ -222,12 +223,13 @@ if df_nbr_hospi is not None:
     df_capacite_hospi_filtered = df_capacite_hospi[df_capacite_hospi['year'].isin(selected_years) & df_capacite_hospi['nom_departement'].isin(selected_departments)]
     
     # Onglets principaux
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "📈 Vue Générale",
         "🗺️ Analyse Géographique",
         "🏥 Pathologies",
         "👥 Démographie",
-        "Carte Géographique"
+        "Carte Géographique",
+        "Pywalker"
     ])
     
     # Vue Générale
@@ -696,3 +698,9 @@ with tab5:
     # Génération de la carte avec le niveau sélectionné
     france_map = generate_multi_level_map(dept_map_data, region_map_data, dept_geojson, region_geojson, selected_view)
     st_data = st_folium(france_map, width=800, height=600)
+
+with tab6:
+    
+    pyg_app = StreamlitRenderer(df_duree_hospi)
+    
+    pyg_app.explorer()

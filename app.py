@@ -8,6 +8,10 @@ import time
 import folium
 from streamlit_folium import st_folium
 import json
+from pygwalker.api.streamlit import StreamlitRenderer
+import pygwalker as pyg
+
+
 
 # Configuration de la page
 st.set_page_config(
@@ -215,12 +219,13 @@ if df_nbr_hospi is not None:
     df_capacite_hospi_filtered = df_capacite_hospi[df_capacite_hospi['year'].isin(selected_years) & df_capacite_hospi['nom_departement'].isin(selected_departments)]
     
     # Onglets principaux
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "📈 Vue Générale",
         "🗺️ Analyse Géographique",
         "🏥 Pathologies",
         "👥 Démographie",
-        "Carte Géographique"
+        "Carte Géographique",
+        "PYGWalker"
     ])
     
     # Vue Générale
@@ -690,3 +695,53 @@ with tab5:
     # Génération de la carte avec le niveau sélectionné
     france_map = generate_multi_level_map(dept_map_data, region_map_data, dept_geojson, region_geojson, selected_view)
     st_data = st_folium(france_map, width=800, height=600)
+    
+    # Ajout du bouton "Retour en haut"
+    st.markdown("""
+        <a href="#" class="back-to-top">↑</a>
+    """, unsafe_allow_html=True)
+
+# In the PYGWalker tab
+@st.cache_data
+def prepare_pygwalker_data():
+    # Premier DataFrame
+    df_hospi = df_nbr_hospi_filtered.copy()
+    if 'year' in df_hospi.columns:
+        df_hospi['year'] = pd.to_datetime(df_hospi['year'])
+    
+    # Deuxième DataFrame
+    df_duree = df_duree_hospi.copy()
+    if 'year' in df_duree.columns:
+        df_duree['year'] = pd.to_datetime(df_duree['year'])
+        
+    # Troisième DataFrame
+    df_age = df_tranche_age_hospi.copy()
+    if 'year' in df_age.columns:
+        df_age['year'] = pd.to_datetime(df_age['year'])
+    
+    return df_hospi, df_duree, df_age
+
+with tab6:
+    # Add Title
+    st.title("Analyse Interactive des Données")
+    
+    # Get cached data
+    df_hospi, df_duree, df_age = prepare_pygwalker_data()
+    
+    # Create tabs for different datasets
+    hospi_tab, duree_tab, age_tab = st.tabs(["Hospitalisations", "Durée de séjour", "Tranches d'âge"])
+    
+    with hospi_tab:
+        st.subheader("Analyse des hospitalisations")
+        pyg_hospi = StreamlitRenderer(df_hospi, spec="./gw_hospi.json")
+        pyg_hospi.explorer()
+    
+    with duree_tab:
+        st.subheader("Analyse des durées de séjour")
+        pyg_duree = StreamlitRenderer(df_duree, spec="./gw_duree.json")
+        pyg_duree.explorer()
+    
+    with age_tab:
+        st.subheader("Analyse par tranches d'âge")
+        pyg_age = StreamlitRenderer(df_age, spec="./gw_age.json")
+        pyg_age.explorer()
