@@ -81,3 +81,10 @@ models:
     class_services_taux_recours:
       +schema: class_services_taux_recours
       +materialized: table
+
+    join_total_morbidite:
+      +schema: join_total_morbidite
+      +materialized: table
+    join_total_morbidite_capacite:
+      +schema: join_total_morbidite_capacite
+      +materialized: table

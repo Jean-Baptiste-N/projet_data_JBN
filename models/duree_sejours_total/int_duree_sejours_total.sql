@@ -1,5 +1,5 @@
 SELECT niveau,
-    CONCAT(region,"_",code_pathologie,"_",annee) as cle_unique,
+    cle_unique,
     annee,
     year,
     pathologie,

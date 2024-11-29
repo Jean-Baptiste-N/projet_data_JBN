@@ -17,3 +17,22 @@ sources:
       - name: class_services
         identifier: Classification_MCO_PSY_ESND_SRR
         description: 'test'
+
+  - name: pop_departement
+    schema: pop_departement
+    tables:
+      - name: population_departement
+        identifier: population_departement
+        description: 'test'
+      - name: population_region
+        identifier: population_region
+        description: 'test'
+
+
+  - name: capacite_services_h
+    schema: capacite_services_h
+    tables:
+      - name: capacite_services_dpt_region
+        identifier: capacite_services_dpt_region
+        description: 'test'
+
