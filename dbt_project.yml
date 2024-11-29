@@ -28,57 +28,56 @@ models:
     nbr_hospi_total:
       +schema: nbr_hospi_total
       +materialized: table
-
     nbr_hospi_découpé:
       +schema: nbr_hospi_decoupe
       +materialized: view
-
     nbr_hospi_par_tranche_age:
       +schema: nbr_hospi_par_tranche_age
       +materialized: view
-
     nbr_hospi_par_annee:
       +schema: nbr_hospi_par_annee
       +materialized: view
-
     nbr_hospi_mart: 
       +schema: nbr_hospi_evolutions
       +materialized: table          
 
+    duree_sejours_total:
+      +schema: duree_sejours_total
+      +materialized: table
     duree_sejours_découpé:
       +schema: duree_sejours_decoupe
       +materialized: view
-
     duree_sejours_par_annee:
       +schema: duree_sejours_par_annee
       +materialized: view
-
     duree_sejours_mart: 
       +schema: duree_sejours_evolutions
       +materialized: table
 
 
+    taux_recours_total:
+      +schema: taux_recours_total
+      +materialized: table
     taux_recours_découpé:
       +schema: taux_recours_decoupe
       +materialized: view
-
     taux_recours_par_annee:
       +schema: taux_recours_par_annee
       +materialized: view
-
     taux_recours_mart: 
       +schema: taux_recours_evolutions
       +materialized: table
       
 
+    class_services_total:
+      +schema: class_services_total
+      +materialized: table
     class_services_nbr_hospi:
       +schema: class_services_nbr_hospi
       +materialized: table
-
     class_services_duree_sejours:
       +schema: class_services_duree_sejours
       +materialized: table
-    
     class_services_taux_recours:
       +schema: class_services_taux_recours
       +materialized: table
