@@ -11,6 +11,7 @@ import json
 from pygwalker.api.streamlit import StreamlitRenderer
 import pygwalker as pyg
 from langchain_openai import AzureChatOpenAI
+import numpy as np
 
 
 # Configuration de la page
@@ -51,12 +52,7 @@ st.markdown("""
     .nav-button:hover {
         background-color: #8ba8e0;
     }
-    .metric-card {
-        background-color: #f0f2f6;
-        padding: 1rem;
-        border-radius: 8px;
-        margin-bottom: 1rem;
-    }
+
     .back-to-top {
         position: fixed;
         bottom: 20px;
@@ -219,7 +215,7 @@ df_nbr_hospi, df_duree_hospi, df_tranche_age_hospi, df_capacite_hospi, df_comple
 # Suite du code uniquement si les données sont chargées correctement
 if df_nbr_hospi is not None:
     # Sidebar pour les filtres globaux
-    st.sidebar.header("📊 Filtres")
+    st.sidebar.header("🎯 Filtres")
     
     # Sélection du niveau administratif
     niveau_administratif = st.sidebar.selectbox(
@@ -294,7 +290,8 @@ if df_nbr_hospi is not None:
         "👥 Démographie",
         "Carte Géographique",
         "PYGWalker",
-        "Docteur"
+        "Docteur",
+
     ])
     
     # Vue Générale
@@ -887,7 +884,7 @@ if df_nbr_hospi is not None:
 
     with tab6:
         # Add Title
-        st.title("Analyse Interactive des Données")
+        st.title("🔍 Analyse interactive")
         
         # Get cached data
         df_hospi, df_duree, df_age = prepare_pygwalker_data()
