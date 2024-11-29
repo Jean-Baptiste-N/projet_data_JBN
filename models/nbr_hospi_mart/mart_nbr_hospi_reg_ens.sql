@@ -1,4 +1,5 @@
-SELECT
+WITH calculs as (
+    SELECT
     niveau,
     cle_unique,
     sexe,
@@ -16,3 +17,12 @@ SELECT
 
 FROM {{ref("int_nbr_hospi_reg_ens_par_annee")}}
 
+
+)
+
+SELECT 
+    t1.* 
+    ,classification
+FROM calculs AS t1
+LEFT JOIN {{ref("stg_morbidite_h__class_services")}} c2
+ON t1.nom_pathologie = c2.pathologie

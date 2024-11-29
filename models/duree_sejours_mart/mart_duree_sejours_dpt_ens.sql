@@ -1,4 +1,5 @@
-SELECT
+with calculs AS(
+    SELECT
     niveau,
     cle_unique,
     pathologie,
@@ -29,4 +30,13 @@ SELECT
     ROUND(safe_divide(AVG_duree_hospi_2022 - AVG_duree_hospi_2018,AVG_duree_hospi_2018) ,2) as evolution_4ans_AVG_duree_hospi
 
 FROM {{ref("int_duree_sejours_dpt_ens_par_annee")}}
+)
+
+SELECT 
+    t1.* 
+    ,classification
+FROM calculs AS t1
+LEFT JOIN {{ref("stg_morbidite_h__class_services")}} c2
+ON t1.nom_pathologie = c2.pathologie
+
 

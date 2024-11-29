@@ -1,3 +1,4 @@
+with calculs AS(
 SELECT
     niveau,
     cle_unique,
@@ -30,3 +31,11 @@ SELECT
 
 FROM {{ref("int_duree_sejours_reg_ens_par_annee")}}
 
+)
+
+SELECT 
+    t1.* 
+    ,classification
+FROM calculs AS t1
+LEFT JOIN {{ref("stg_morbidite_h__class_services")}} c2
+ON t1.nom_pathologie = c2.pathologie
