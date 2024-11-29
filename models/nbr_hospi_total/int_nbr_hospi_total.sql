@@ -1,6 +1,6 @@
 SELECT
     niveau,
-    cle_unique
+    cle_unique,
     sexe,
     year,
     EXTRACT(year from year) as annee,
