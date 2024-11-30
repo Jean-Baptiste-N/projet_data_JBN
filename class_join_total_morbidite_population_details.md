@@ -44,8 +44,8 @@ Taux et indices
 
 Divers
 
-    classification (object) : Classification thématique ou spécifique.
-    population (Int64) : Population totale associée.
+    classification (object) : Classification en terme de service médical : M (Médecine), C (Chirurgie), SSR (soins de suite et de réadaptation), O (Obstétrique), ESND (Établissement de santé non défini), PSY (Psychothérapie).
+    population (Int64) : Population totale associée par région et département (valeurs dupliqués).
 
 Vérification manquante
 
