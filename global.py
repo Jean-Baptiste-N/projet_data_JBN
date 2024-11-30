@@ -19,66 +19,17 @@ st.set_page_config(
     page_title="Analyse Hospitalière",
     page_icon="🏥",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="auto"
 )
 
 # Styles CSS personnalisés
 st.markdown("""
-    <style>
-    .main { padding: 0rem 1rem; }
-    .stTabs [data-baseweb="tab-list"] { gap: 2px; }
-    .stTabs [data-baseweb="tab"] {
-        padding: 10px 20px;
-        background-color: #abc4f7;
-        border-radius: 4px 4px 0px 0px;
-        color: black;
+<style>
+    .stApp {
+        background-color: ;
     }
-    .error-message {
-        color: red;
-        padding: 1rem;
-        border: 1px solid red;
-        border-radius: 4px;
-    }
-    .nav-button {
-        background-color: #abc4f7;
-        color: black;
-        padding: 10px 20px;
-        border-radius: 4px;
-        text-decoration: none;
-        margin: 5px;
-        cursor: pointer;
-        border: none;
-    }
-    .nav-button:hover {
-        background-color: #8ba8e0;
-    }
-
-    .back-to-top {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        z-index: 999;
-        background-color: #abc4f7;
-        color: black;
-        padding: 10px;
-        border-radius: 50%;
-        text-decoration: none;
-        display: none;
-    }
-    </style>
-    <script>
-    window.onscroll = function() {
-        if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
-            document.querySelector('.back-to-top').style.display = 'block';
-        } else {
-            document.querySelector('.back-to-top').style.display = 'none';
-        }
-    };
-    </script>
+</style>
 """, unsafe_allow_html=True)
-
-# Titre principal
-st.title("🏥 Dashboard d'Analyse Hospitalière")
 
 # Fonction de chargement des données avec gestion d'erreurs
 @st.cache_resource
@@ -214,38 +165,44 @@ df_nbr_hospi, df_duree_hospi, df_tranche_age_hospi, df_capacite_hospi, df_comple
 
 # Suite du code uniquement si les données sont chargées correctement
 if df_nbr_hospi is not None:
-    # Sidebar pour les filtres globaux
-    st.sidebar.header("🎯 Filtres")
-    
-    # Sélection du niveau administratif
-    niveau_administratif = st.sidebar.selectbox(
-        "Niveau administratif",
-        ["Régions", "Départements"],
-        index=0,
-        help="Choisissez le niveau de détail géographique",
-        key="niveau_administratif"
-    )
-    
-    # Sélection du sexe
-    selected_sex = st.sidebar.selectbox(
-        "Sexe",
-        ["Ensemble", "Homme", "Femme"],
-        index=0,
-        help="Filtrer les données par sexe",
-        key="selecteur_sexe"
-    )
-    
-    # Filtre années (utiliser year.dt.year pour extraire l'année)
-    years = sorted(df_nbr_hospi['year'].dt.year.unique())
-    select_all_years = st.sidebar.checkbox("Sélectionner toutes les années", value=True)
-    if select_all_years:
-        selected_years = st.sidebar.multiselect("Sélectionner les années", years, default=years)
-    else:
-        selected_years = st.sidebar.multiselect("Sélectionner les années", years)
+    # Titre principal et filtres
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        # Sélection du niveau administratif
+        niveau_administratif = st.selectbox(
+            "Niveau administratif",
+            ["Régions", "Départements"],
+            key="niveau_administratif"
+        )
+
+    with col2:
+        # Sélection du sexe
+        selected_sex = st.selectbox(
+            "Sexe",
+            ["Ensemble", "Homme", "Femme"],
+            key="selecteur_sexe"
+        )
+
+    with col3:
+        # Filtre années avec une liste déroulante simple
+        years = sorted(df_nbr_hospi['year'].dt.year.unique(), reverse=True)
+        years_options = ["Toutes les années"] + [str(year) for year in years]
+        selected_year = st.selectbox("Année", years_options, key="year_filter")
+        
+        # Convertir la sélection en liste d'années pour le filtrage
+        if selected_year == "Toutes les années":
+            selected_years = years
+        else:
+            selected_years = [int(selected_year)]
+
+    st.title(" 🏥 Analyse hospitalière en France - 2018 à 2022")
+
+    # Sidebar pour la navigation
+    st.sidebar.header("Navigation")
     
     # Filtrer le DataFrame en fonction du niveau sélectionné
     df_filtered = df_complet[df_complet['niveau'] == niveau_administratif]
-    
 
     # Filtre régions/départements selon le niveau choisi
     territories = sorted(df_filtered['nom_region'].unique())
@@ -283,163 +240,202 @@ if df_nbr_hospi is not None:
     main_metrics = calculate_main_metrics(df_nbr_hospi, df_capacite_hospi, selected_sex)
     
     # Onglets principaux
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
         "📈 Vue Générale",
         "🗺️ Analyse Géographique",
         "🏥 Pathologies",
         "👥 Démographie",
-        "Carte Géographique",
+        "🌍 Carte de France",
         "PYGWalker",
-        "Docteur",
+        "Services Médicaux",
+        "Votre docteur",
 
     ])
     
     # Vue Générale
     with tab1:
-        st.subheader("📊 Vue d'ensemble des données")
+        st.subheader("Nombre d'hospitalisations par année")
         
         # Affichage des métriques dans des cartes stylisées
         st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
         col1, col2, col3, col4, col5 = st.columns(5)
         
         with col1:
-            st.metric(
-                label="Hospitalisations en 2018",
-                value=f"{main_metrics['hospi_2018'] / 1_000_000:.2f}M",
-                delta=None,
-                help="Nombre total d'hospitalisations en 2018"
-            )
-        with col2:
-            value_2018 = main_metrics["hospi_2018"]
             value_2019 = main_metrics["hospi_2019"]
+            value_2018 = main_metrics["hospi_2018"]
             delta_2019 = ((value_2019 - value_2018) / value_2018) * 100
             st.metric(
-                label="Hospitalisations en 2019",
+                label="2019",
                 value=f"{value_2019 / 1_000_000:.2f}M",
-                delta=f"{delta_2019:.2f}%",
+                delta=f"{delta_2019:.2f}% vs 2018",
                 help="Nombre total d'hospitalisations en 2019 et variation par rapport à 2018"
             )
-        with col3:
-            value_2019 = main_metrics["hospi_2019"]
+        with col2:
             value_2020 = main_metrics["hospi_2020"]
             delta_2020 = ((value_2020 - value_2019) / value_2019) * 100
             st.metric(
-                label="Hospitalisations en 2020",
+                label="2020",
                 value=f"{value_2020 / 1_000_000:.2f}M",
-                delta=f"{delta_2020:.2f}%",
+                delta=f"{delta_2020:.2f}% vs 2019",
                 help="Nombre total d'hospitalisations en 2020 et variation par rapport à 2019"
             )
-        with col4:
-            value_2020 = main_metrics["hospi_2020"]
+        with col3:
             value_2021 = main_metrics["hospi_2021"]
             delta_2021 = ((value_2021 - value_2020) / value_2020) * 100
             st.metric(
-                label="Hospitalisations en 2021",
+                label="2021",
                 value=f"{value_2021 / 1_000_000:.2f}M",
-                delta=f"{delta_2021:.2f}%",
+                delta=f"{delta_2021:.2f}% vs 2020",
                 help="Nombre total d'hospitalisations en 2021 et variation par rapport à 2020"
             )
-        with col5:
-            value_2021 = main_metrics["hospi_2021"]
+        with col4:
             value_2022 = main_metrics["hospi_2022"]
             delta_2022 = ((value_2022 - value_2021) / value_2021) * 100
             st.metric(
-                label="Hospitalisations en 2022",
+                label="2022",
                 value=f"{value_2022 / 1_000_000:.2f}M",
-                delta=f"{delta_2022:.2f}%",
+                delta=f"{delta_2022:.2f}% vs 2021",
                 help="Nombre total d'hospitalisations en 2022 et variation par rapport à 2021"
             )
+        with col5:
+            value_2022_2018 = value_2022 - value_2018  # Calcul du nombre de lits perdus
+            delta_total = ((value_2022 - value_2018) / value_2018) * 100
+            st.metric(
+                label="Évolution 2018-2022",
+                value=f"+{value_2022_2018 / 1_000:.2f}K",
+                delta=f"{delta_total:.2f}% vs 2018",
+                help="Évolution du nombre total d'hospitalisations entre 2018 et 2022"
+            )
         st.markdown("</div>", unsafe_allow_html=True)
-        style_metric_cards(background_color="#abc4f7")
-
+        style_metric_cards(background_color="#F0F2F6",border_left_color= "#007BFF")
         # Affichage des lits disponibles
+        st.subheader("Nombre de lits disponibles par années")
         st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
         col1, col2, col3, col4, col5 = st.columns(5)
         with col1:
-            st.metric(
-                label="Lits disponibles en 2018",
-                value=f"{main_metrics['lits_2018'] / 1_000_000:.2f}M",
-                delta=None,
-                help="Nombre total de lits disponibles en 2018"
-            )
-        with col2:
-            value_2018_lits = main_metrics["lits_2018"]
             value_2019_lits = main_metrics["lits_2019"]
+            value_2018_lits = main_metrics["lits_2018"]
             delta_2019_lits = ((value_2019_lits - value_2018_lits) / value_2018_lits) * 100
             st.metric(
-                label="Lits disponibles en 2019",
+                label="2019",
                 value=f"{value_2019_lits / 1_000_000:.2f}M",
-                delta=f"{delta_2019_lits:.2f}%",
+                delta=f"{delta_2019_lits:.2f}% vs 2018",
                 help="Nombre total de lits disponibles en 2019 et variation par rapport à 2018"
             )
-        with col3:
+        with col2:
             value_2020_lits = main_metrics["lits_2020"]
             delta_2020_lits = ((value_2020_lits - value_2019_lits) / value_2019_lits) * 100
             st.metric(
-                label="Lits disponibles en 2020",
+                label="2020",
                 value=f"{value_2020_lits / 1_000_000:.2f}M",
-                delta=f"{delta_2020_lits:.2f}%",
+                delta=f"{delta_2020_lits:.2f}% vs 2019",
                 help="Nombre total de lits disponibles en 2020 et variation par rapport à 2019"
             )
-        with col4:
+        with col3:
             value_2021_lits = main_metrics["lits_2021"]
             delta_2021_lits = ((value_2021_lits - value_2020_lits) / value_2020_lits) * 100
             st.metric(
-                label="Lits disponibles en 2021",
+                label="2021",
                 value=f"{value_2021_lits / 1_000_000:.2f}M",
-                delta=f"{delta_2021_lits:.2f}%",
+                delta=f"{delta_2021_lits:.2f}% vs 2020",
                 help="Nombre total de lits disponibles en 2021 et variation par rapport à 2020"
             )
-        with col5:
+        with col4:
             value_2022_lits = main_metrics["lits_2022"]
             delta_2022_lits = ((value_2022_lits - value_2021_lits) / value_2021_lits) * 100
             st.metric(
-                label="Lits disponibles en 2022",
+                label="2022",
                 value=f"{value_2022_lits / 1_000_000:.2f}M",
-                delta=f"{delta_2022_lits:.2f}%",
+                delta=f"{delta_2022_lits:.2f}% vs 2021",
                 help="Nombre total de lits disponibles en 2022 et variation par rapport à 2021"
+            )
+        with col5:
+            lits_perdus = value_2018_lits - value_2022_lits  # Calcul du nombre de lits perdus
+            delta_total_lits = ((value_2022_lits - value_2018_lits) / value_2018_lits) * 100
+            st.metric(
+                label="Lits perdus (2018-2022)",
+                value=f"-{lits_perdus / 1_000:.2f}K",  # Affichage en milliers
+                delta=f"{delta_total_lits:.2f}% vs 2018",
+                help="Nombre de lits perdus entre 2018 et 2022 et pourcentage de diminution"
             )
         st.markdown("</div>", unsafe_allow_html=True)
 
         # Tendances temporelles avec tooltips améliorés
-        st.subheader("📈 Évolution temporelle")
         col1, col2 = st.columns(2)
         
-        with col1:
-            hospi_by_year = df_nbr_hospi.groupby('year')['nbr_hospi'].sum().reset_index()
-            fig = px.line(hospi_by_year, x='year', y='nbr_hospi',
-                         title='Nombre d\'hospitalisations par année',
-                         labels={'year': 'Année', 'nbr_hospi': 'Nombre d\'hospitalisations'},
-                         custom_data=['year', 'nbr_hospi'])
-            fig.update_traces(
-                hovertemplate="<b>Année:</b> %{customdata[0]}<br>" +
-                             "<b>Hospitalisations:</b> %{customdata[1]:,.0f}<br><extra></extra>"
-            )
-            fig.update_layout(
-                hoverlabel=dict(bgcolor="white"),
-                hovermode='x unified'
-            )
-            st.plotly_chart(fig, use_container_width=True)
+        # Préparation des données
+        hospi_by_year = df_nbr_hospi.groupby('year')['nbr_hospi'].sum().reset_index()
+        duree_by_year = df_duree_hospi.groupby('year')['AVG_duree_hospi'].mean().reset_index()
         
-        with col2:
-            duree_by_year = df_duree_hospi.groupby('year')['AVG_duree_hospi'].mean().reset_index()
-            fig = px.line(duree_by_year, x='year', y='AVG_duree_hospi',
-                         title='Durée moyenne des hospitalisations par année',
-                         labels={'year': 'Année', 'AVG_duree_hospi': 'Durée moyenne (jours)'},
-                         custom_data=['year', 'AVG_duree_hospi'])
-            fig.update_traces(
-                hovertemplate="<b>Année:</b> %{customdata[0]}<br>" +
-                             "<b>Durée moyenne:</b> %{customdata[1]:.1f} jours<br><extra></extra>"
-            )
-            fig.update_layout(
-                hoverlabel=dict(bgcolor="white"),
-                hovermode='x unified'
-            )
-            st.plotly_chart(fig, use_container_width=True)
+        # Création du graphique combiné
+        fig = go.Figure()
 
+        # Ajout des barres pour le nombre d'hospitalisations
+        fig.add_trace(
+            go.Bar(
+                x=hospi_by_year['year'],
+                y=hospi_by_year['nbr_hospi'],
+                name="Nombre d'hospitalisations",
+                yaxis='y',
+                marker_color='#abc4f7',
+                hovertemplate="<b>Année:</b> %{x|%Y}<br>" +
+                             "<b>Hospitalisations:</b> %{y:,.0f}<br><extra></extra>"
+            )
+        )
+
+        # Ajout de la ligne pour la durée moyenne
+        fig.add_trace(
+            go.Scatter(
+                x=duree_by_year['year'],
+                y=duree_by_year['AVG_duree_hospi'],
+                name="Durée moyenne",
+                yaxis='y2',
+                line=dict(color='#FF9B9B', width=3),
+                hovertemplate="<b>Année:</b> %{x|%Y}<br>" +
+                             "<b>Durée moyenne:</b> %{y:.1f} jours<br><extra></extra>"
+            )
+        )
+
+        # Mise à jour de la mise en page
+        fig.update_layout(
+            title="Évolution des hospitalisations et de leur durée moyenne",
+            yaxis=dict(
+                title="Nombre d'hospitalisations",
+                titlefont=dict(color="#abc4f7"),
+                tickfont=dict(color="#abc4f7"),
+                showgrid=True
+            ),
+            yaxis2=dict(
+                title="Durée moyenne (jours)",
+                titlefont=dict(color="#FF9B9B"),
+                tickfont=dict(color="#FF9B9B"),
+                anchor="x",
+                overlaying="y",
+                side="right"
+            ),
+            xaxis=dict(
+                title="Année",
+                tickformat="%Y"
+            ),
+            showlegend=True,
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
+            ),
+            hovermode='x unified',
+            hoverlabel=dict(bgcolor="white"),
+            barmode='relative'
+        )
+
+        # Affichage du graphique
+        st.plotly_chart(fig, use_container_width=True)
+        
     # Analyse Géographique
     with tab2:
-        st.subheader("🗺️ Distribution géographique")
+        st.subheader(" Distribution géographique")
         
         col1, col2 = st.columns(2)
         with col1:
@@ -484,11 +480,11 @@ if df_nbr_hospi is not None:
 
     # Pathologies
     with tab3:
-        st.subheader("🏥 Analyse des pathologies")
+        st.subheader(" Analyse des pathologies")
         
         # Ajout d'un champ de recherche pour les pathologies
         all_pathologies = sorted(df_nbr_hospi_filtered['nom_pathologie'].unique())
-        search_term = st.text_input("🔍 Rechercher une pathologie", "")
+        search_term = st.text_input(" Rechercher une pathologie", "")
         
         # Filtrer les pathologies en fonction de la recherche
         if search_term:
@@ -552,7 +548,7 @@ if df_nbr_hospi is not None:
         st.plotly_chart(fig, use_container_width=True)
         
         # Recherche de pathologies spécifiques
-        st.subheader("🔍 Recherche de pathologies spécifiques")
+        st.subheader(" Recherche de pathologies spécifiques")
         search_term = st.text_input("Rechercher une pathologie", "")
         
         comparative_indices = df_tranche_age_hospi_filtered.groupby(['nom_pathologie'])['indice_comparatif_tt_age_percent'].mean().reset_index()
@@ -577,7 +573,7 @@ if df_nbr_hospi is not None:
 
     # Démographie
     with tab4:
-        st.subheader("👥 Analyse démographique")
+        st.subheader(" Analyse démographique")
         
         # Taux de recours par tranche d'âge
         age_groups = [
@@ -604,14 +600,18 @@ if df_nbr_hospi is not None:
         col1, col2 = st.columns(2)
         
         with col1:
-            st.subheader("📊 Distribution par tranche d'âge")
+            st.subheader(" Distribution par tranche d'âge")
             
-            # Calcul de la moyenne pour toutes les tranches d'âge
-            age_distribution = df_tranche_age_hospi_filtered[age_groups].mean()
-            age_distribution = pd.DataFrame({
-                'Tranche d\'âge': [age_labels[col] for col in age_groups],
-                'Taux': age_distribution.values
-            })
+            # Optimisation du calcul de la moyenne pour les tranches d'âge
+            age_means = []
+            for col in age_groups:
+                mean_value = df_tranche_age_hospi_filtered[col].mean()
+                age_means.append({
+                    'Tranche d\'âge': age_labels[col],
+                    'Taux': mean_value
+                })
+            
+            age_distribution = pd.DataFrame(age_means)
             
             fig = px.bar(age_distribution,
                         x='Tranche d\'âge',
@@ -629,7 +629,7 @@ if df_nbr_hospi is not None:
             st.plotly_chart(fig, use_container_width=True)
         
         with col2:
-            st.subheader("📈 Évolution des taux")
+            st.subheader(" Évolution des taux")
             
             # Calcul de l'évolution des taux standardisés
             evolution_taux = df_tranche_age_hospi_filtered.groupby('year').agg({
@@ -667,7 +667,7 @@ if df_nbr_hospi is not None:
             st.plotly_chart(fig, use_container_width=True)
         
         # Analyse régionale par tranche d'âge
-        st.subheader("📊 Analyse territoriale par tranche d'âge")
+        st.subheader(" Analyse territoriale par tranche d'âge")
         
         # Sélection du territoire
         territory_col = 'nom_region'
@@ -788,7 +788,7 @@ if df_nbr_hospi is not None:
         return m
 
     with tab5:
-        st.subheader("🗺️ Carte interactive des hospitalisations")
+        st.subheader(" Carte interactive des hospitalisations")
         
         # Charger les GeoJSON appropriés selon le niveau administratif
         if niveau_administratif == "Régions":
@@ -808,7 +808,7 @@ if df_nbr_hospi is not None:
         st_folium(m, width=1200, height=600)
         
         # Ajouter des statistiques sous la carte
-        st.subheader("📊 Statistiques territoriales")
+        st.subheader(" Statistiques territoriales")
         
         col1, col2 = st.columns(2)
         
@@ -864,64 +864,234 @@ if df_nbr_hospi is not None:
     """, unsafe_allow_html=True)
 
     @st.cache_data
-    def prepare_pygwalker_data():
-        # Premier DataFrame - hospitalisations
-        df_hospi = df_nbr_hospi.copy()
-        if 'year' in df_hospi.columns:
-            df_hospi['year'] = pd.to_datetime(df_hospi['year'])
-        
-        # Deuxième DataFrame - durée de séjour
-        df_duree = df_duree_hospi.copy()
-        if 'year' in df_duree.columns:
-            df_duree['year'] = pd.to_datetime(df_duree['year'])
-        
-        # Troisième DataFrame - tranches d'âge
-        df_age = df_tranche_age_hospi.copy()
-        if 'year' in df_age.columns:
-            df_age['year'] = pd.to_datetime(df_age['year'])
-        
-        return df_hospi, df_duree, df_age
+    def prepare_hospi_data():
+        hospi_columns = ['year', 'region', 'nom_region', 'pathologie', 'nom_pathologie', 'nbr_hospi']
+        df_hospi = df_nbr_hospi[hospi_columns].copy()
+        df_hospi['year'] = pd.to_datetime(df_hospi['year']).dt.date
+        df_hospi['nbr_hospi'] = df_hospi['nbr_hospi'].astype('float32')
+        return df_hospi
+
+    @st.cache_data
+    def prepare_duree_data():
+        duree_columns = ['year', 'region', 'nom_region', 'pathologie', 'nom_pathologie', 'AVG_duree_hospi']
+        df_duree = df_duree_hospi[duree_columns].copy()
+        df_duree['year'] = pd.to_datetime(df_duree['year']).dt.date
+        df_duree['AVG_duree_hospi'] = df_duree['AVG_duree_hospi'].astype('float32')
+        return df_duree
+
+    @st.cache_data
+    def prepare_age_data():
+        age_columns = ['year', 'region', 'nom_region', 'pathologie', 'nom_pathologie', 
+                      'tx_brut_tt_age_pour_mille', 'tx_standard_tt_age_pour_mille']
+        df_age = df_tranche_age_hospi[age_columns].copy()
+        df_age['year'] = pd.to_datetime(df_age['year']).dt.date
+        df_age['tx_brut_tt_age_pour_mille'] = df_age['tx_brut_tt_age_pour_mille'].astype('float32')
+        df_age['tx_standard_tt_age_pour_mille'] = df_age['tx_standard_tt_age_pour_mille'].astype('float32')
+        return df_age
 
     with tab6:
         # Add Title
-        st.title("🔍 Analyse interactive")
+        st.title(" Analyse interactive")
         
-        # Get cached data
-        df_hospi, df_duree, df_age = prepare_pygwalker_data()
+        # Chargement progressif des données avec indicateur de progression
+        with st.spinner("Chargement des données d'hospitalisation..."):
+            df_hospi = prepare_hospi_data()
+            
+        with st.spinner("Chargement des données de durée de séjour..."):
+            df_duree = prepare_duree_data()
+            
+        with st.spinner("Chargement des données par âge..."):
+            df_age = prepare_age_data()
+
+        if all(df is not None for df in [df_hospi, df_duree, df_age]):
+            # Initialize PyGWalker with the loaded data
+            walker = StreamlitRenderer(df_hospi, spec="./config.json", debug=False)
+            walker.explorer()
+        else:
+            st.error("Erreur lors du chargement des données. Veuillez réessayer.")
         
-        # Create tabs for different datasets
-        hospi_tab, duree_tab, age_tab = st.tabs(["Hospitalisations", "Durée de séjour", "Tranches d'âge"])
-        
-        with hospi_tab:
-            st.subheader("Analyse des hospitalisations")
-            if not df_hospi.empty:
-                pyg_hospi = StreamlitRenderer(df_hospi, spec="./gw_hospi.json")
-                pyg_hospi.explorer()
-            else:
-                st.warning("Aucune donnée d'hospitalisation disponible pour les filtres sélectionnés.")
-        
-        with duree_tab:
-            st.subheader("Analyse des durées de séjour")
-            if not df_duree.empty:
-                pyg_duree = StreamlitRenderer(df_duree, spec="./gw_duree.json")
-                pyg_duree.explorer()
-            else:
-                st.warning("Aucune donnée de durée de séjour disponible pour les filtres sélectionnés.")
-        
-        with age_tab:
-            st.subheader("Analyse par tranches d'âge")
-            if not df_age.empty:
-                pyg_age = StreamlitRenderer(df_age, spec="./gw_age.json")
-                pyg_age.explorer()
-            else:
-                st.warning("Aucune donnée par tranche d'âge disponible pour les filtres sélectionnés.")
-        
-    # In the Chat tab
+    # Création d'un nouvel onglet pour l'analyse par service médical
     with tab7:
-        st.title("🦜🔗 Parle avec un docteur")
+        st.subheader(" Analyse par Service Médical")
+        
+        # Filtrer les données pour n'avoir que les totaux par service
+        df_service = df_complet[df_complet['sexe'] == 'Ensemble'].copy()
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Sélection de l'année
+            selected_year = st.selectbox(
+                "Sélectionner l'année",
+                sorted(df_service['annee'].unique()),
+                key='service_year'
+            )
+        
+        with col2:
+            # Sélection de la région
+            selected_region = st.selectbox(
+                "Sélectionner la région",
+                ['France entière'] + sorted(df_service['nom_region'].unique()),
+                key='service_region'
+            )
+        
+        # Filtrer les données selon les sélections
+        mask = (df_service['annee'] == selected_year)
+        if selected_region != 'France entière':
+            mask &= (df_service['nom_region'] == selected_region)
+        
+        df_service_filtered = df_service[mask]
+        
+        # Création des groupes d'âge
+        df_service_filtered['age_enfants'] = df_service_filtered[['tranche_age_0_1', 'tranche_age_1_4', 
+            'tranche_age_5_14']].sum(axis=1)
+        df_service_filtered['age_jeunes'] = df_service_filtered['tranche_age_15_24']
+        df_service_filtered['age_adultes'] = df_service_filtered[['tranche_age_25_34', 
+            'tranche_age_35_44']].sum(axis=1)
+        df_service_filtered['age_seniors'] = df_service_filtered[['tranche_age_45_54', 
+            'tranche_age_55_64']].sum(axis=1)
+        df_service_filtered['age_ages'] = df_service_filtered[['tranche_age_65_74', 'tranche_age_75_84', 
+            'tranche_age_85_et_plus']].sum(axis=1)
+
+        # Création du dataframe pour les tranches d'âge regroupées
+        age_groups = ['Enfants (0-14)', 'Jeunes (15-24)', 'Adultes (25-44)', 'Seniors (45-64)', 'Personnes âgées (65+)']
+        df_age_grouped = df_service_filtered.groupby('classification').agg({
+            'age_enfants': 'mean',
+            'age_jeunes': 'mean',
+            'age_adultes': 'mean',
+            'age_seniors': 'mean',
+            'age_ages': 'mean',
+            'nbr_hospi': 'sum'
+        }).reset_index()
+        
+        # Pie chart interactif
+        fig_pie = px.pie(
+            df_service_filtered.groupby('classification')['nbr_hospi'].sum().reset_index(),
+            values='nbr_hospi',
+            names='classification',
+            title=f'Répartition des hospitalisations par service médical ({selected_year})',
+            hole=0.4,
+            color_discrete_sequence=px.colors.qualitative.Set3
+        )
+        fig_pie.update_traces(textposition='inside', textinfo='percent+label')
+        st.plotly_chart(fig_pie, use_container_width=True)
+        
+        # Évolution temporelle par service
+        df_evolution = df_service.groupby(['annee', 'classification'])['nbr_hospi'].sum().reset_index()
+        
+        fig_evolution = px.line(
+            df_evolution,
+            x='annee',
+            y='nbr_hospi',
+            color='classification',
+            title='Évolution des hospitalisations par service médical',
+            labels={'annee': 'Année', 'nbr_hospi': 'Nombre d\'hospitalisations', 'classification': 'Service'}
+        )
+        st.plotly_chart(fig_evolution, use_container_width=True)
+        
+        # Heatmap des services par tranche d'âge
+        age_columns = [col for col in df_service.columns if col.startswith('tranche_age_')]
+        
+        df_age_service = df_service_filtered.groupby('classification')[age_columns].mean().reset_index()
+        df_age_service_melted = pd.melt(
+            df_age_service,
+            id_vars=['classification'],
+            value_vars=age_columns,
+            var_name='tranche_age',
+            value_name='pourcentage'
+        )
+        
+        # Nettoyer les noms des tranches d'âge
+        df_age_service_melted['tranche_age'] = df_age_service_melted['tranche_age'].str.replace('tranche_age_', '')
+        
+        fig_heatmap = px.density_heatmap(
+            df_age_service_melted,
+            x='tranche_age',
+            y='classification',
+            z='pourcentage',
+            title='Distribution des tranches d\'âge par service médical',
+            labels={'tranche_age': 'Tranche d\'âge', 'classification': 'Service', 'pourcentage': 'Pourcentage'},
+            color_continuous_scale='Viridis'
+        )
+        fig_heatmap.update_layout(xaxis_tickangle=-45)
+        st.plotly_chart(fig_heatmap, use_container_width=True)
+
+        # Création d'une visualisation 3D plus pertinente
+        st.subheader("Évolution des services médicaux dans le temps")
+
+        # Préparation des données pour le graphique 3D
+        df_evolution = df_service.groupby(['annee', 'classification', 'nom_region'])['nbr_hospi'].sum().reset_index()
+        
+        # Création du graphique 3D
+        fig_3d = go.Figure()
+
+        # Ajout d'une trace pour chaque service
+        for service in df_evolution['classification'].unique():
+            df_service_data = df_evolution[df_evolution['classification'] == service]
+            
+            fig_3d.add_trace(go.Scatter3d(
+                x=df_service_data['annee'],
+                y=df_service_data['nom_region'],
+                z=df_service_data['nbr_hospi'],
+                name=service,
+                mode='markers',
+                marker=dict(
+                    size=6,
+                    opacity=0.7
+                ),
+                hovertemplate=
+                '<b>Service:</b> ' + service + '<br>' +
+                '<b>Année:</b> %{x}<br>' +
+                '<b>Région:</b> %{y}<br>' +
+                '<b>Hospitalisations:</b> %{z:,.0f}<br>'
+            ))
+
+        # Mise en page du graphique 3D
+        fig_3d.update_layout(
+            title='Distribution des hospitalisations par service, année et région',
+            scene=dict(
+                xaxis_title='Année',
+                yaxis_title='Région',
+                zaxis_title='Nombre d\'hospitalisations',
+                camera=dict(
+                    up=dict(x=0, y=0, z=1),
+                    center=dict(x=0, y=0, z=0),
+                    eye=dict(x=2, y=2, z=1.5)
+                )
+            ),
+            showlegend=True,
+            legend=dict(
+                yanchor="top",
+                y=0.99,
+                xanchor="right",
+                x=0.99
+            ),
+            width=800,
+            height=600
+        )
+
+        # Affichage du graphique
+        st.plotly_chart(fig_3d, use_container_width=True)
+
+        # Tableau récapitulatif simplifié
+        st.subheader("Résumé par service médical")
+        df_summary = df_service_filtered.groupby('classification').agg({
+            'nbr_hospi': 'sum',
+            'evolution_nbr_hospi': 'mean'
+        }).reset_index()
+        
+        df_summary.columns = ['Service', 'Hospitalisations', 'Évolution (%)']
+        st.dataframe(df_summary.style.format({
+            'Hospitalisations': '{:,.0f}',
+            'Évolution (%)': '{:+.1f}%'
+        }))
+
+    # In the Chat tab
+    with tab8:
+        st.title(" Parle avec un docteur")
 
         # Add refresh button
-        if st.button("🔄 Nouvelle conversation"):
+        if st.button(" Nouvelle conversation"):
             st.session_state.messages = []
             st.rerun()
 
