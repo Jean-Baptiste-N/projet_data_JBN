@@ -240,15 +240,13 @@ if df_nbr_hospi is not None:
     main_metrics = calculate_main_metrics(df_nbr_hospi, df_capacite_hospi, selected_sex)
     
     # Onglets principaux
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
-        "📈 Vue Générale",
-        "🗺️ Analyse Géographique",
+    tab1, tab2, tab3, tab4, tab5, tab6= st.tabs([
+        "📈 Vue générale",
+        "🗺️ Analyse géographique",
         "🏥 Pathologies",
         "👥 Démographie",
         "🌍 Carte de France",
-        "PYGWalker",
-        "Services Médicaux",
-        "Votre docteur",
+        "Services Médicaux"
 
     ])
     
@@ -888,31 +886,10 @@ if df_nbr_hospi is not None:
         df_age['tx_brut_tt_age_pour_mille'] = df_age['tx_brut_tt_age_pour_mille'].astype('float32')
         df_age['tx_standard_tt_age_pour_mille'] = df_age['tx_standard_tt_age_pour_mille'].astype('float32')
         return df_age
-
-    with tab6:
-        # Add Title
-        st.title(" Analyse interactive")
-        
-        # Chargement progressif des données avec indicateur de progression
-        with st.spinner("Chargement des données d'hospitalisation..."):
-            df_hospi = prepare_hospi_data()
-            
-        with st.spinner("Chargement des données de durée de séjour..."):
-            df_duree = prepare_duree_data()
-            
-        with st.spinner("Chargement des données par âge..."):
-            df_age = prepare_age_data()
-
-        if all(df is not None for df in [df_hospi, df_duree, df_age]):
-            # Initialize PyGWalker with the loaded data
-            walker = StreamlitRenderer(df_hospi, spec="./config.json", debug=False)
-            walker.explorer()
-        else:
-            st.error("Erreur lors du chargement des données. Veuillez réessayer.")
         
     # Création d'un nouvel onglet pour l'analyse par service médical
-    with tab7:
-        st.subheader(" Analyse par Service Médical")
+    with tab6:
+        st.subheader(" Analyse par service médical")
         
         # Filtrer les données pour n'avoir que les totaux par service
         df_service = df_complet[df_complet['sexe'] == 'Ensemble'].copy()
@@ -1085,95 +1062,3 @@ if df_nbr_hospi is not None:
             'Hospitalisations': '{:,.0f}',
             'Évolution (%)': '{:+.1f}%'
         }))
-
-    # In the Chat tab
-    with tab8:
-        st.title(" Parle avec un docteur")
-
-        # Add refresh button
-        if st.button(" Nouvelle conversation"):
-            st.session_state.messages = []
-            st.rerun()
-
-        # Initialize chat history
-        if "messages" not in st.session_state:
-            st.session_state.messages = []
-
-        def get_data_context():
-            context = []
-            
-            # Ajouter des informations sur le nombre d'hospitalisations
-            if not df_nbr_hospi.empty:
-                total_hospi = df_nbr_hospi['nbr_hospi'].sum()
-                years = sorted(df_nbr_hospi['year'].unique())
-                context.append(f"Nombre total d'hospitalisations: {total_hospi}")
-                context.append(f"Période couverte: de {min(years)} à {max(years)}")
-            
-            # Ajouter des informations sur la durée moyenne des séjours
-            if not df_duree_hospi.empty:
-                avg_duration = df_duree_hospi['AVG_duree_hospi'].mean()
-                context.append(f"Durée moyenne des séjours: {avg_duration:.1f} jours")
-            
-            # Ajouter des informations sur les capacités
-            if not df_capacite_hospi.empty:
-                total_capacity = df_capacite_hospi['total_sejour_hospi_complete'].sum()
-                context.append(f"Capacité totale d'accueil: {total_capacity} lits")
-            
-            return "\n".join(context)
-
-        # Create a container for the chat history
-        chat_container = st.container()
-
-        # Create a container for the input at the bottom
-        input_container = st.container()
-
-        # Display chat messages in the chat container
-        with chat_container:
-            for message in st.session_state.messages:
-                with st.chat_message(message["role"]):
-                    st.markdown(message["content"])
-
-        # Place the input at the bottom
-        with input_container:
-            if prompt := st.chat_input("Posez votre question sur le milieu hospitalier..."):
-                # Add user message to chat history
-                st.session_state.messages.append({"role": "user", "content": prompt})
-                # Display user message in chat message container
-                with chat_container:
-                    with st.chat_message("user"):
-                        st.markdown(prompt)
-
-                # Display assistant response in chat message container
-                with chat_container:
-                    with st.chat_message("assistant"):
-                        message_placeholder = st.empty()
-                        try:
-                            # Préparer le contexte avec les données
-                            data_context = get_data_context()
-                            enhanced_prompt = f"""En tant qu'assistant spécialisé dans le domaine hospitalier, utilisez ces données pour répondre à la question:
-
-Contexte des données disponibles:
-{data_context}
-
-Question de l'utilisateur: {prompt}
-
-Veuillez baser votre réponse sur ces données sans effectuer d'interprétation pour garder une réponse simple et précise. 
-Veuillez utiliser des termes simples et clairs pour faciliter la compréhension. 
-Vous pouvez intégrer des émojis dans vos réponses."""
-
-                            llm = AzureChatOpenAI(
-                                openai_api_version="2023-05-15",
-                                azure_deployment=st.secrets["azure"]["AZURE_DEPLOYMENT_NAME"],
-                                azure_endpoint=st.secrets["azure"]["AZURE_ENDPOINT"],
-                                api_key=st.secrets["azure"]["AZURE_API_KEY"],
-                                temperature=0.2
-                            )
-                            response = llm.invoke(enhanced_prompt)
-                            response_content = str(response.content) if hasattr(response, 'content') else str(response)
-                            message_placeholder.markdown(response_content)
-                            st.session_state.messages.append({"role": "assistant", "content": response_content})
-                        except Exception as e:
-                            st.error(f"Error: Make sure your Azure OpenAI credentials are properly set in .streamlit/secrets.toml. Error details: {str(e)}")
-
-if __name__ == '__main__':     
-    st.set_option('server.enableCORS', True)
