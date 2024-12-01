@@ -4,15 +4,42 @@ import plotly.express as px
 import plotly.graph_objects as go
 from google.cloud import bigquery
 
-# Configuration de la page
-st.set_page_config(
-    page_title="Focus sur la Médecine",
-    page_icon="🏥",
-    layout="wide"
-)
 
-# Titre de la page
-st.title("Focus sur la Médecine")
+# Définition des couleurs du thème
+MAIN_COLOR = '#003366'  # Bleu marine principal
+SECONDARY_COLOR = '#AFDC8F'  # Vert clair complémentaire
+ACCENT_COLOR = '#3D7317'  # Vert foncé pour les accents
+
+# Style CSS personnalisé
+st.markdown ("""
+    <style>
+    .main-title {
+        color: #003366;
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    .section-title {
+        color: #003366;
+        font-size: 1.8rem;
+        font-weight: bold;
+        margin: 1.5rem 0;
+    }
+    .card {
+        padding: 1rem;
+        border-radius: 10px;
+        background-color: #f8f9fa;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+
+# Titre principal
+st.markdown("<h1 class='main-title'>🏥 Focus sur la Médecine</h1>", unsafe_allow_html=True)
+
 
 # Fonction de chargement des données
 @st.cache_resource
@@ -23,19 +50,21 @@ def load_data():
         client = bigquery.Client.from_service_account_info(gcp_service_account)
         
         # Chargement des données
-        query = '''
+        query = """
             SELECT *
             FROM `projet-jbn-data-le-wagon.dbt_medical_analysis_join_total_morbidite.class_join_total_morbidite_population`
             WHERE classification = 'M'
-        '''
+        """
         df = client.query(query).to_dataframe()
         return df
     except Exception as e:
-        st.error(f"Erreur lors du chargement des données : {str(e)}")
+        st.error (f"Erreur lors du chargement des données : {str(e)}")
         return None
+
 
 # Chargement des données
 df = load_data()
+
 
 if df is not None:
     # Filtres principaux en colonnes

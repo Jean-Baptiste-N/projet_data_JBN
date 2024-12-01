@@ -4,15 +4,41 @@ import plotly.express as px
 import plotly.graph_objects as go
 from google.cloud import bigquery
 
-# Configuration de la page
-st.set_page_config(
-    page_title="Focus sur les SSR",
-    page_icon="🏥",
-    layout="wide"
-)
 
-# Titre de la page
-st.title("Focus sur les SSR (Soins de Suite et de Réadaptation)")
+
+# Définition des couleurs du thème
+MAIN_COLOR = '#003366'  # Bleu marine principal
+SECONDARY_COLOR = '#AFDC8F'  # Vert clair complémentaire
+ACCENT_COLOR = '#3D7317'  # Vert foncé pour les accents
+
+# Style CSS personnalisé
+st.markdown("""
+    <style>
+    .main-title {
+        color: #003366;
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    .section-title {
+        color: #003366;
+        font-size: 1.8rem;
+        font-weight: bold;
+        margin: 1.5rem 0;
+    }
+    .card {
+        padding: 1rem;
+        border-radius: 10px;
+        background-color: #f8f9fa;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# Titre principal
+st.markdown("<h1 class='main-title'>🏥 Focus sur les SSR</h1>", unsafe_allow_html=True)
 
 # Fonction de chargement des données
 @st.cache_resource
@@ -108,6 +134,8 @@ if df is not None:
         title="Distribution par tranche d'âge",
         labels={'x': "Tranche d'âge", 'y': "Nombre d'hospitalisations"}
     )
+    fig.update_traces(marker_color=MAIN_COLOR)
+    fig.update_layout(template='plotly_white')
     st.plotly_chart(fig, use_container_width=True)
 
 else:

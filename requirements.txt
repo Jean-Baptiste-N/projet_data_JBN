@@ -13,4 +13,8 @@ langchain
 langgraph
 langchain-community
 sqlalchemy-bigquery
-sqlalchemy>=1.4.0
+sqlalchemy
+langchain-experimental
+e2b
+langchain_experimental
+e2b-code-interpreter

@@ -5,12 +5,7 @@ import plotly.graph_objects as go
 from google.cloud import bigquery
 from pygwalker.api.streamlit import StreamlitRenderer
 
-# Configuration de la page
-st.set_page_config(
-    page_title="Générez vos propres graphiques",
-    page_icon="📊",
-    layout="wide"
-)
+
 
 # Fonction de chargement des données
 @st.cache_resource

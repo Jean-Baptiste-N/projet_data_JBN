@@ -14,22 +14,49 @@ from langchain_openai import AzureChatOpenAI
 import numpy as np
 
 
-# Configuration de la page
-st.set_page_config(
-    page_title="Analyse Hospitalière",
-    page_icon="🏥",
-    layout="wide",
-    initial_sidebar_state="auto"
-)
-
 # Styles CSS personnalisés
 st.markdown("""
 <style>
     .stApp {
-        background-color: ;
+        background-color: #ffffff;
+    }
+    .main-title {
+        color: #2c3e50;
+        text-align: center;
+        padding: 1rem 0;
+        font-size: 2.5rem;
+    }
+    .section-title {
+        color: #34495e;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 0.5rem;
+        margin: 2rem 0 1rem 0;
+    }
+    .insight-card {
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin: 1rem 0;
+    }
+    .metric-container {
+        background-color: #ffffff;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        margin: 0.5rem 0;
+    }
+    .tab-content {
+        padding: 1rem;
+        margin-top: 1rem;
     }
 </style>
 """, unsafe_allow_html=True)
+
+# Définition des couleurs du thème
+MAIN_COLOR = '#003366'  # Bleu marine principal
+SECONDARY_COLOR = '#AFDC8F'  # Vert clair complémentaire
+ACCENT_COLOR = '#3D7317'  # Vert foncé pour les accents
 
 # Fonction de chargement des données avec gestion d'erreurs
 @st.cache_resource
@@ -163,9 +190,29 @@ def load_with_progress():
 # Chargement des données avec interface de progression
 df_nbr_hospi, df_duree_hospi, df_tranche_age_hospi, df_capacite_hospi, df_complet, main_metrics = load_with_progress()
 
+# Titre principal avec style amélioré
+st.markdown("<h1 class='main-title'>🏥 Analyse hospitalière en France (2018-2022)</h1>", unsafe_allow_html=True)
+
+# Introduction explicative
+st.markdown("""
+    <div class="insight-card">
+    <h3>📊 Vue d'ensemble</h3>
+    <p>Cette analyse présente un panorama complet du système hospitalier français sur 5 ans, 
+    couvrant les aspects suivants :</p>
+    <ul>
+        <li>Évolution des capacités hospitalières</li>
+        <li>Distribution géographique des établissements</li>
+        <li>Analyse des pathologies principales</li>
+        <li>Tendances démographiques</li>
+        <li>Performance des services médicaux</li>
+    </ul>
+    </div>
+""", unsafe_allow_html=True)
+
 # Suite du code uniquement si les données sont chargées correctement
 if df_nbr_hospi is not None:
-    # Titre principal et filtres
+    # Filtres dans une card dédiée
+    
     col1, col2, col3 = st.columns(3)
 
     with col1:
@@ -195,8 +242,6 @@ if df_nbr_hospi is not None:
             selected_years = years
         else:
             selected_years = [int(selected_year)]
-
-    st.title(" 🏥 Analyse hospitalière en France - 2018 à 2022")
 
     # Sidebar pour la navigation
     st.sidebar.header("Navigation")
@@ -240,22 +285,29 @@ if df_nbr_hospi is not None:
     main_metrics = calculate_main_metrics(df_nbr_hospi, df_capacite_hospi, selected_sex)
     
     # Onglets principaux
-    tab1, tab2, tab3, tab4, tab5, tab6= st.tabs([
+    tab1, tab2, tab3, tab4, tab5= st.tabs([
         "📈 Vue générale",
         "🗺️ Analyse géographique",
         "🏥 Pathologies",
         "👥 Démographie",
-        "🌍 Carte de France",
         "Services Médicaux"
 
     ])
     
     # Vue Générale
     with tab1:
+        st.markdown("""
+            <div class="insight-card">
+            <h3>📈 Évolution des hospitalisations et capacités</h3>
+            <p>Suivez l'évolution du nombre d'hospitalisations et des capacités d'accueil au fil des années.
+            Les indicateurs clés vous permettent de comprendre les tendances et les changements majeurs.</p>
+            </div>
+        """, unsafe_allow_html=True)
+        
         st.subheader("Nombre d'hospitalisations par année")
         
         # Affichage des métriques dans des cartes stylisées
-        st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
+        st.markdown("<div class='metric-container'>", unsafe_allow_html=True)
         col1, col2, col3, col4, col5 = st.columns(5)
         
         with col1:
@@ -308,7 +360,6 @@ if df_nbr_hospi is not None:
         style_metric_cards(background_color="#F0F2F6",border_left_color= "#007BFF")
         # Affichage des lits disponibles
         st.subheader("Nombre de lits disponibles par années")
-        st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
         col1, col2, col3, col4, col5 = st.columns(5)
         with col1:
             value_2019_lits = main_metrics["lits_2019"]
@@ -351,12 +402,11 @@ if df_nbr_hospi is not None:
             lits_perdus = value_2018_lits - value_2022_lits  # Calcul du nombre de lits perdus
             delta_total_lits = ((value_2022_lits - value_2018_lits) / value_2018_lits) * 100
             st.metric(
-                label="Lits perdus (2018-2022)",
+                label="Évolution 2018-2022",
                 value=f"-{lits_perdus / 1_000:.2f}K",  # Affichage en milliers
                 delta=f"{delta_total_lits:.2f}% vs 2018",
                 help="Nombre de lits perdus entre 2018 et 2022 et pourcentage de diminution"
             )
-        st.markdown("</div>", unsafe_allow_html=True)
 
         # Tendances temporelles avec tooltips améliorés
         col1, col2 = st.columns(2)
@@ -375,7 +425,7 @@ if df_nbr_hospi is not None:
                 y=hospi_by_year['nbr_hospi'],
                 name="Nombre d'hospitalisations",
                 yaxis='y',
-                marker_color='#abc4f7',
+                marker_color=MAIN_COLOR,
                 hovertemplate="<b>Année:</b> %{x|%Y}<br>" +
                              "<b>Hospitalisations:</b> %{y:,.0f}<br><extra></extra>"
             )
@@ -388,7 +438,7 @@ if df_nbr_hospi is not None:
                 y=duree_by_year['AVG_duree_hospi'],
                 name="Durée moyenne",
                 yaxis='y2',
-                line=dict(color='#FF9B9B', width=3),
+                line=dict(color=SECONDARY_COLOR, width=3),
                 hovertemplate="<b>Année:</b> %{x|%Y}<br>" +
                              "<b>Durée moyenne:</b> %{y:.1f} jours<br><extra></extra>"
             )
@@ -399,14 +449,14 @@ if df_nbr_hospi is not None:
             title="Évolution des hospitalisations et de leur durée moyenne",
             yaxis=dict(
                 title="Nombre d'hospitalisations",
-                titlefont=dict(color="#abc4f7"),
-                tickfont=dict(color="#abc4f7"),
+                titlefont=dict(color=MAIN_COLOR),
+                tickfont=dict(color=MAIN_COLOR),
                 showgrid=True
             ),
             yaxis2=dict(
                 title="Durée moyenne (jours)",
-                titlefont=dict(color="#FF9B9B"),
-                tickfont=dict(color="#FF9B9B"),
+                titlefont=dict(color=ACCENT_COLOR),
+                tickfont=dict(color=ACCENT_COLOR),
                 anchor="x",
                 overlaying="y",
                 side="right"
@@ -425,7 +475,8 @@ if df_nbr_hospi is not None:
             ),
             hovermode='x unified',
             hoverlabel=dict(bgcolor="white"),
-            barmode='relative'
+            barmode='relative',
+            template='plotly_white'
         )
 
         # Affichage du graphique
@@ -433,7 +484,13 @@ if df_nbr_hospi is not None:
         
     # Analyse Géographique
     with tab2:
-        st.subheader(" Distribution géographique")
+        st.markdown("""
+            <div class="insight-card">
+            <h3>🗺️ Répartition géographique</h3>
+            <p>Explorez la distribution des établissements et des hospitalisations à travers les régions françaises.
+            Identifiez les zones de forte concentration et les disparités territoriales.</p>
+            </div>
+        """, unsafe_allow_html=True)
         
         col1, col2 = st.columns(2)
         with col1:
@@ -453,9 +510,9 @@ if df_nbr_hospi is not None:
             fig.update_traces(
                 hovertemplate=f"<b>{territory_label.capitalize()}:</b> %{{customdata[0]}}<br>" +
                              "<b>Hospitalisations:</b> %{customdata[1]:,.0f}<br><extra></extra>",
-                marker_color='#abc4f7'
+                marker_color=MAIN_COLOR
             )
-            fig.update_layout(height=600)
+            fig.update_layout(height=600, template='plotly_white')
             st.plotly_chart(fig, use_container_width=True)
         
         with col2:
@@ -471,14 +528,20 @@ if df_nbr_hospi is not None:
             fig.update_traces(
                 hovertemplate=f"<b>{territory_label.capitalize()}:</b> %{{customdata[0]}}<br>" +
                              "<b>Durée moyenne:</b> %{customdata[1]:.1f} jours<br><extra></extra>",
-                marker_color='#abc4f7'
+                marker_color=MAIN_COLOR
             )
-            fig.update_layout(height=600)
+            fig.update_layout(height=600, template='plotly_white')
             st.plotly_chart(fig, use_container_width=True)
 
     # Pathologies
     with tab3:
-        st.subheader(" Analyse des pathologies")
+        st.markdown("""
+            <div class="insight-card">
+            <h3>🏥 Analyse des pathologies</h3>
+            <p>Découvrez les principales pathologies traitées dans les établissements français.
+            Comparez leur fréquence et leur évolution dans le temps.</p>
+            </div>
+        """, unsafe_allow_html=True)
         
         # Ajout d'un champ de recherche pour les pathologies
         all_pathologies = sorted(df_nbr_hospi_filtered['nom_pathologie'].unique())
@@ -521,9 +584,9 @@ if df_nbr_hospi is not None:
         fig.update_traces(
             hovertemplate="<b>Pathologie:</b> %{customdata[0]}<br>" +
                          "<b>Hospitalisations:</b> %{customdata[1]:,.0f}<br><extra></extra>",
-            marker_color='#abc4f7'
+            marker_color=MAIN_COLOR
         )
-        fig.update_layout(height=800)
+        fig.update_layout(height=800, template='plotly_white')
         st.plotly_chart(fig, use_container_width=True)
         
 
@@ -540,9 +603,9 @@ if df_nbr_hospi is not None:
         fig.update_traces(
             hovertemplate="<b>Pathologie:</b> %{customdata[0]}<br>" +
                          "<b>Durée moyenne:</b> %{customdata[1]:.1f} jours<br><extra></extra>",
-            marker_color='#abc4f7'
+            marker_color=MAIN_COLOR
         )
-        fig.update_layout(height=800)
+        fig.update_layout(height=800, template='plotly_white')
         st.plotly_chart(fig, use_container_width=True)
         
         # Recherche de pathologies spécifiques
@@ -564,14 +627,20 @@ if df_nbr_hospi is not None:
             hovertemplate="<b>Pathologie:</b> %{customdata[0]}<br>" +
                          "<b>Code:</b> %{customdata[1]}<br>" +
                          "<b>Indice comparatif:</b> %{customdata[2]:.1f}%<br><extra></extra>",
-            marker_color='#abc4f7'
+            marker_color=MAIN_COLOR
         )
-        fig.update_layout(height=800)
+        fig.update_layout(height=800, template='plotly_white')
         st.plotly_chart(fig, use_container_width=True)
 
     # Démographie
     with tab4:
-        st.subheader(" Analyse démographique")
+        st.markdown("""
+            <div class="insight-card">
+            <h3>👥 Profil démographique</h3>
+            <p>Analysez la répartition des hospitalisations par tranche d'âge et par territoire.
+            Identifiez les besoins spécifiques de chaque groupe démographique.</p>
+            </div>
+        """, unsafe_allow_html=True)
         
         # Taux de recours par tranche d'âge
         age_groups = [
@@ -621,9 +690,9 @@ if df_nbr_hospi is not None:
             fig.update_traces(
                 hovertemplate="<b>Tranche d'âge:</b> %{customdata[0]}<br>" +
                              "<b>Taux:</b> %{customdata[1]:.2f}%<br><extra></extra>",
-                marker_color='#abc4f7'
+                marker_color=MAIN_COLOR
             )
-            fig.update_layout(height=500)
+            fig.update_layout(height=500, template='plotly_white')
             st.plotly_chart(fig, use_container_width=True)
         
         with col2:
@@ -641,7 +710,7 @@ if df_nbr_hospi is not None:
                 x=evolution_taux['year'],
                 y=evolution_taux['tx_standard_tt_age_pour_mille'],
                 name='Taux standardisé',
-                line=dict(color='#abc4f7', width=2),
+                line=dict(color=SECONDARY_COLOR, width=2),
                 hovertemplate="<b>Date:</b> %{x|%Y}<br>" +
                              "<b>Taux standardisé:</b> %{y:.2f}‰<br><extra></extra>"
             ))
@@ -650,7 +719,7 @@ if df_nbr_hospi is not None:
                 x=evolution_taux['year'],
                 y=evolution_taux['tx_brut_tt_age_pour_mille'],
                 name='Taux brut',
-                line=dict(color='#7a9cf0', width=2, dash='dash'),
+                line=dict(color=ACCENT_COLOR, width=2, dash='dash'),
                 hovertemplate="<b>Date:</b> %{x|%Y}<br>" +
                              "<b>Taux brut:</b> %{y:.2f}‰<br><extra></extra>"
             ))
@@ -660,7 +729,8 @@ if df_nbr_hospi is not None:
                 xaxis_title='Année',
                 yaxis_title='Taux pour 1000 habitants',
                 height=500,
-                hovermode='x unified'
+                hovermode='x unified',
+                template='plotly_white'
             )
             st.plotly_chart(fig, use_container_width=True)
         
@@ -691,9 +761,9 @@ if df_nbr_hospi is not None:
         fig.update_traces(
             hovertemplate="<b>Tranche d'âge:</b> %{customdata[0]}<br>" +
                          "<b>Taux:</b> %{customdata[1]:.2f}%<br><extra></extra>",
-            marker_color='#abc4f7'
+            marker_color=MAIN_COLOR
         )
-        fig.update_layout(height=500)
+        fig.update_layout(height=500, template='plotly_white')
         st.plotly_chart(fig, use_container_width=True)
         
         # Affichage des indicateurs clés
@@ -718,148 +788,6 @@ if df_nbr_hospi is not None:
                 "Indice comparatif",
                 f"{indice_comp:.1f}%"
             )
-        
-    # Ajout du bouton "Retour en haut"
-    st.markdown("""
-        <a href="#" class="back-to-top">↑</a>
-    """, unsafe_allow_html=True)
-
-    # Préparation des données pour la carte
-    @st.cache_data
-    def prepare_map_data(df_filtered):
-        territory_col = 'nom_region'
-        
-        # Agrégation des données par territoire
-        hospi_by_territory = df_filtered.groupby(territory_col)['nbr_hospi'].sum().reset_index()
-        
-        # Création du dictionnaire pour la carte
-        map_data = dict(zip(hospi_by_territory[territory_col], hospi_by_territory['nbr_hospi']))
-        
-        return map_data
-
-    def get_style_function(x):
-        return {
-            'fillColor': '#ffffff',
-            'color': '#000000',
-            'fillOpacity': 0.1,
-            'weight': 0.1
-        }
-
-    def get_highlight_function(x):
-        return {
-            'fillColor': '#000000',
-            'color': '#000000',
-            'fillOpacity': 0.50,
-            'weight': 0.1
-        }
-
-    def generate_map(map_data, geojson_data):
-        # Créer la carte de base
-        m = folium.Map(location=[46.603354, 1.888334], zoom_start=6)
-        
-        # Ajouter la couche choropleth
-        choropleth = folium.Choropleth(
-            geo_data=geojson_data,
-            data=map_data,
-            columns=['nom_region', 'nbr_hospi'],
-            key_on="feature.properties.nom",
-            fill_color="YlOrRd",
-            fill_opacity=0.7,
-            line_opacity=0.2,
-            legend_name="Nombre d'hospitalisations"
-        ).add_to(m)
-        
-        # Ajouter les tooltips
-        for feature in choropleth.geojson.data['features']:
-            territory_name = feature['properties']['nom']
-            nbr_hospi = map_data.get(territory_name, 0)
-            
-            tooltip = folium.Tooltip(f"{territory_name}: {nbr_hospi:,.0f} hospitalisations")
-            
-            folium.GeoJson(
-                feature,
-                tooltip=tooltip,
-                style_function=get_style_function,
-                highlight_function=get_highlight_function
-            ).add_to(m)
-        
-        return m
-
-    with tab5:
-        st.subheader(" Carte interactive des hospitalisations")
-        
-        # Charger les GeoJSON appropriés selon le niveau administratif
-        if niveau_administratif == "Régions":
-            with open('data/regions-version-simplifiee.geojson', 'r', encoding='utf-8') as f:
-                geojson_data = json.load(f)
-        else:  # Département
-            with open('data/departements-version-simplifiee.geojson', 'r', encoding='utf-8') as f:
-                geojson_data = json.load(f)
-        
-        # Préparer les données pour la carte
-        map_data = prepare_map_data(df_nbr_hospi_filtered)
-        
-        # Générer la carte
-        m = generate_map(map_data, geojson_data)
-        
-        # Afficher la carte
-        st_folium(m, width=1200, height=600)
-        
-        # Ajouter des statistiques sous la carte
-        st.subheader(" Statistiques territoriales")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            # Top 5 territoires avec le plus d'hospitalisations
-            territory_col = 'nom_region'
-            top_territories = df_nbr_hospi_filtered.groupby(territory_col)['nbr_hospi'].sum().sort_values(ascending=False).head()
-            
-            # Convertir en DataFrame
-            top_territories_df = pd.DataFrame({
-                'territoire': top_territories.index,
-                'hospitalisations': top_territories.values
-            })
-            
-            fig = px.bar(
-                top_territories_df,
-                x='hospitalisations',
-                y='territoire',
-                orientation='h',
-                title=f'Top 5 territoires par nombre d\'hospitalisations',
-                labels={
-                    'hospitalisations': 'Nombre d\'hospitalisations',
-                    'territoire': 'Territoire'
-                }
-            )
-            fig.update_traces(marker_color='#abc4f7')
-            st.plotly_chart(fig, use_container_width=True)
-        
-        with col2:
-            # Évolution temporelle du territoire sélectionné
-            selected_territory = st.selectbox(
-                f"Sélectionner un territoire pour voir l'évolution",
-                sorted(df_nbr_hospi_filtered['nom_region'].unique())
-            )
-            
-            evolution_data = df_nbr_hospi_filtered[
-                df_nbr_hospi_filtered['nom_region'] == selected_territory
-            ].groupby('year')['nbr_hospi'].sum().reset_index()
-            
-            fig = px.line(
-                evolution_data,
-                x='year',
-                y='nbr_hospi',
-                title=f'Évolution des hospitalisations - {selected_territory}',
-                labels={'nbr_hospi': 'Nombre d\'hospitalisations', 'year': 'Année'}
-            )
-            fig.update_traces(line_color='#abc4f7')
-            st.plotly_chart(fig, use_container_width=True)
-        
-    # Ajout du bouton "Retour en haut"
-    st.markdown("""
-        <a href="#" class="back-to-top">↑</a>
-    """, unsafe_allow_html=True)
 
     @st.cache_data
     def prepare_hospi_data():
@@ -888,8 +816,14 @@ if df_nbr_hospi is not None:
         return df_age
         
     # Création d'un nouvel onglet pour l'analyse par service médical
-    with tab6:
-        st.subheader(" Analyse par service médical")
+    with tab5:
+        st.markdown("""
+            <div class="insight-card">
+            <h3>🏥 Performance des services</h3>
+            <p>Évaluez la performance des différents services médicaux à travers le temps.
+            Analysez les tendances et les variations par spécialité.</p>
+            </div>
+        """, unsafe_allow_html=True)
         
         # Filtrer les données pour n'avoir que les totaux par service
         df_service = df_complet[df_complet['sexe'] == 'Ensemble'].copy()
@@ -951,6 +885,7 @@ if df_nbr_hospi is not None:
             color_discrete_sequence=px.colors.qualitative.Set3
         )
         fig_pie.update_traces(textposition='inside', textinfo='percent+label')
+        fig_pie.update_layout(template='plotly_white')
         st.plotly_chart(fig_pie, use_container_width=True)
         
         # Évolution temporelle par service
@@ -964,6 +899,7 @@ if df_nbr_hospi is not None:
             title='Évolution des hospitalisations par service médical',
             labels={'annee': 'Année', 'nbr_hospi': 'Nombre d\'hospitalisations', 'classification': 'Service'}
         )
+        fig_evolution.update_layout(template='plotly_white')
         st.plotly_chart(fig_evolution, use_container_width=True)
         
         # Heatmap des services par tranche d'âge
@@ -990,7 +926,7 @@ if df_nbr_hospi is not None:
             labels={'tranche_age': 'Tranche d\'âge', 'classification': 'Service', 'pourcentage': 'Pourcentage'},
             color_continuous_scale='Viridis'
         )
-        fig_heatmap.update_layout(xaxis_tickangle=-45)
+        fig_heatmap.update_layout(xaxis_tickangle=-45, template='plotly_white')
         st.plotly_chart(fig_heatmap, use_container_width=True)
 
         # Création d'une visualisation 3D plus pertinente
@@ -1044,7 +980,8 @@ if df_nbr_hospi is not None:
                 x=0.99
             ),
             width=800,
-            height=600
+            height=600,
+            template='plotly_white'
         )
 
         # Affichage du graphique

@@ -3,12 +3,6 @@ from langchain_openai import AzureChatOpenAI
 import pandas as pd
 from google.cloud import bigquery
 
-# Configuration de la page
-st.set_page_config(
-    page_title="Votre docteur en ligne",
-    page_icon="👨‍⚕️",
-    layout="wide"
-)
 
 # Chargement des données
 @st.cache_resource
