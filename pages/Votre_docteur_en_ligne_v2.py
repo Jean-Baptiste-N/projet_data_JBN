@@ -163,53 +163,121 @@ N'hésitez pas à croiser les données pour fournir des analyses pertinentes.
         placeholder.markdown(thinking_states.get(step, "🤔 Je réfléchis..."))
         time.sleep(1)  # Petit délai pour rendre les transitions visibles
 
+    def get_contextual_suggestions(user_input):
+
+        templates = {
+            "pathologie": ["Quelles pathologies sont les plus fréquentes ?", "Évolution des hospitalisations par pathologie ?", "Comparaison des régions sur les pathologies."],
+            "region": ["Quelles régions ont le plus d'hospitalisations ?", "Comparer les régions sur le taux brut.", "Top régions selon l'indice standardisé."],
+            "année": ["Tendances des hospitalisations pour l'année spécifiée ?", "Comment le taux brut évolue-t-il sur plusieurs années ?", "Focus sur une région pour une année spécifique ?"]
+        }
+        
+        # Analyse simple du contexte via mots-clés
+        context = []
+        if any(word in user_input.lower() for word in ["pathologie", "maladie", "diagnostic"]):
+            context.append("pathologie")
+        if any(word in user_input.lower() for word in ["région", "département", "localisation"]):
+            context.append("region")
+        if any(word in user_input.lower() for word in ["année", "évolution", "tendance"]):
+            context.append("année")
+        
+        # Combine les suggestions pertinentes
+        suggestions = [template for key in context for template in templates.get(key, [])]
+        return suggestions if suggestions else ["Besoin d'aide pour poser une question ?"]
+
     def main():
         # Initialiser l'historique des messages
         if "messages" not in st.session_state:
             st.session_state.messages = []
-        
-        # Afficher l'historique des messages
-        for message in st.session_state.messages:
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
-        
-        # Zone de saisie pour la question
-        if prompt := st.chat_input("Posez votre question sur les données médicales..."):
-            # Ajouter la question à l'historique
-            st.session_state.messages.append({"role": "user", "content": prompt})
-            
-            # Afficher la question
-            with st.chat_message("user"):
-                st.markdown(prompt)
-            
-            # Afficher le message "en cours de réflexion"
-            with st.chat_message("assistant"):
-                message_placeholder = st.empty()
+
+        # Créer les containers
+        chat_container = st.container()
+        suggestions_container = st.container()
+        input_container = st.container()
+
+        # Afficher l'historique des messages dans le chat container
+        with chat_container:
+            for message in st.session_state.messages:
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])
+
+        # Gérer l'entrée utilisateur
+        with input_container:
+            if prompt := st.chat_input("Posez votre question sur les données médicales..."):
+                # Ajouter la question à l'historique
+                st.session_state.messages.append({"role": "user", "content": prompt})
                 
-                try:
-                    # Étape 1: Début de la réflexion
-                    update_thinking_status(message_placeholder, 'start')
+                # Afficher la question
+                with st.chat_message("user"):
+                    st.markdown(prompt)
+                
+                # Afficher le message "en cours de réflexion"
+                with st.chat_message("assistant"):
+                    message_placeholder = st.empty()
                     
-                    # Étape 2: Analyse de la question
-                    update_thinking_status(message_placeholder, 'analyzing')
-                    response = st.session_state.agent.invoke(prompt)
+                    try:
+                        # Étape 1: Début de la réflexion
+                        update_thinking_status(message_placeholder, 'start')
+                        
+                        # Étape 2: Analyse de la question
+                        update_thinking_status(message_placeholder, 'analyzing')
+                        response = st.session_state.agent.invoke(prompt)
+                        
+                        # Étape 3: Requête et traitement
+                        update_thinking_status(message_placeholder, 'querying')
+                        final_response = response.get('output', "Je n'ai pas pu générer une réponse.")
+                        
+                        # Étape 4: Formatage de la réponse
+                        update_thinking_status(message_placeholder, 'formatting')
+                        time.sleep(0.5)
+                        
+                        # Affichage de la réponse finale
+                        message_placeholder.markdown(final_response)
+                        
+                        # Ajouter la réponse à l'historique
+                        st.session_state.messages.append({"role": "assistant", "content": final_response})
+                        st.rerun()
                     
-                    # Étape 3: Requête et traitement
-                    update_thinking_status(message_placeholder, 'querying')
-                    final_response = response.get('output', "Je n'ai pas pu générer une réponse.")
-                    
-                    # Étape 4: Formatage de la réponse
-                    update_thinking_status(message_placeholder, 'formatting')
-                    time.sleep(0.5)  # Petit délai avant l'affichage final
-                    
-                    # Affichage de la réponse finale
-                    message_placeholder.markdown(final_response)
-                    
-                    # Ajouter la réponse à l'historique
-                    st.session_state.messages.append({"role": "assistant", "content": final_response})
-                    
-                except Exception as e:
-                    message_placeholder.markdown(f"❌ Désolé, une erreur s'est produite : {str(e)}")
+                    except Exception as e:
+                        message_placeholder.markdown(f"❌ Désolé, une erreur s'est produite : {str(e)}")
+
+        # Afficher les suggestions après chaque réponse
+        if st.session_state.messages and st.session_state.messages[-1]["role"] == "assistant":
+            with suggestions_container:
+                st.markdown("### 💡 Pour approfondir :")
+                suggestions = get_contextual_suggestions(st.session_state.messages[-2]["content"])  # Get suggestions based on last user message
+                
+                # Créer des colonnes pour les suggestions
+                num_suggestions = len(suggestions)
+                if num_suggestions > 0:
+                    cols = st.columns(min(3, num_suggestions))  # Maximum 3 colonnes
+                    for idx, suggestion in enumerate(suggestions):
+                        col_idx = idx % min(3, num_suggestions)
+                        with cols[col_idx]:
+                            if st.button(suggestion, key=f"sugg_{idx}"):
+                                st.session_state.messages.append({"role": "user", "content": suggestion})
+                                with st.chat_message("user"):
+                                    st.markdown(suggestion)
+                                
+                                with st.chat_message("assistant"):
+                                    message_placeholder = st.empty()
+                                    try:
+                                        update_thinking_status(message_placeholder, 'start')
+                                        update_thinking_status(message_placeholder, 'analyzing')
+                                        response = st.session_state.agent.invoke(suggestion)
+                                        update_thinking_status(message_placeholder, 'querying')
+                                        final_response = response.get('output', "Je n'ai pas pu générer une réponse.")
+                                        update_thinking_status(message_placeholder, 'formatting')
+                                        time.sleep(0.5)
+                                        message_placeholder.markdown(final_response)
+                                        st.session_state.messages.append({"role": "assistant", "content": final_response})
+                                        st.rerun()
+                                    except Exception as e:
+                                        message_placeholder.markdown(f"❌ Désolé, une erreur s'est produite : {str(e)}")
+
+        # Bouton pour nouvelle conversation
+        if st.button("🔄 Nouvelle conversation"):
+            st.session_state.messages = []
+            st.rerun()
 
     # Initialisation uniquement si tous les imports sont disponibles
     if 'agent' not in st.session_state:

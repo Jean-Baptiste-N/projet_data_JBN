@@ -128,10 +128,12 @@ def generate_map(map_data, geojson_data, niveau_administratif, df_filtered, sexe
         data=df_map,
         columns=['code', 'nbr_hospi'],
         key_on='feature.properties.code',
-        fill_color="YlOrRd",
+        fill_color='YlOrBr',
         fill_opacity=0.7,
         line_opacity=0.2,
-        legend_name="Nombre d'hospitalisations"
+        legend_name="Nombre d'hospitalisations",
+        bins=8,
+        nan_fill_color="white"
     ).add_to(m)
     
     # Ajouter les tooltips
