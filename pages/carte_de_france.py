@@ -197,7 +197,7 @@ def show_map(df_filtered, niveau_administratif, selected_service, sexe, annee):
         st_folium(m, width=1200, height=800)
     with col_help:
         st.metric(
-            label="",
+            label="help",
             value="",
             help="""Cette carte interactive vous permet de visualiser la distribution des hospitalisations en France.
             

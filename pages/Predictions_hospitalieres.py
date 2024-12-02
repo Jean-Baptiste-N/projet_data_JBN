@@ -92,7 +92,7 @@ if prediction_type == "Besoins en lits":
     
     with col_help:
         st.metric(
-            label="",
+            label="help",
             value="",
             help="""📈 Graphique de prédiction des besoins en lits :
             
@@ -136,7 +136,7 @@ elif prediction_type == "Tendances d'hospitalisation":
     
     with col_help:
         st.metric(
-            label="",
+            label="help",
             value="",
             help="""📈 Analyse des tendances d'hospitalisation :
 
@@ -178,7 +178,7 @@ else:  # Durées de séjour
     
     with col_help:
         st.metric(
-            label="",
+            label="help",
             value="",
             help="""⏱️ Prévision des durées de séjour :
 
@@ -207,7 +207,7 @@ with col3:
     st.metric("R²", "0.83", "↑ 0.02")
 with col_help:
     st.metric(
-        label="",
+        label="help",
         value="",
         help="""📊 Indicateurs de performance du modèle :
         

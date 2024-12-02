@@ -122,7 +122,7 @@ if df is not None:
 
     with col_help:
         st.metric(
-            label="",
+            label="help",
             value="",
             help="""📊 Ces métriques clés résument les données psychiatriques :
             
