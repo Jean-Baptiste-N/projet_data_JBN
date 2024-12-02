@@ -4,13 +4,13 @@ sources:
   - name: morbidite_h
     schema: morbidite_h
     tables:
-      - name: taux_recours
+      - name: taux_recours3
         identifier: tableau_3_ren
         description: "test"
-      - name: duree_sejours
+      - name: duree_sejours2
         identifier: tableau_2_ren
         description: "test"
-      - name: nombre_hospit
+      - name: nombre_hospit1
         identifier: tableau_1_ren
         description: 'test'
 
@@ -32,11 +32,11 @@ sources:
   - name: capacite_services_h
     schema: capacite_services_h
     tables:
-      - name: capacite_2022_par_service
-        identifier: capacite_2022_par_service
+      - name: capacite_2022_par_service_clean
+        identifier: capacite_2022_par_service_clean
         description: "Tebrfbest"
-      - name: capacite_2022_par_etablissement
-        identifier: capacite_2022_par_etablissement
+      - name: capacite_2022_par_etablissement_clean
+        identifier: capacite_2022_par_etablissement_clean
         description: "Test"
       - name: capacite_services_dpt_region
         identifier: capacite_services_dpt_region
