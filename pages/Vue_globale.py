@@ -125,9 +125,9 @@ def calculate_main_metrics(df_nbr_hospi, df_capacite_hospi, selected_sex='Ensemb
         metrics[f"hospi_{year}"] = total_hospi
 
     # Calcul des lits disponibles par année
-    lits_disponibles = df_capacite_hospi.groupby('year')['total_lit_hospi_complete'].sum().reset_index()
+    lits_disponibles = df_capacite_hospi.groupby('year')['lit_hospi_complete'].sum().reset_index()
     for year in range(2018, 2023):
-        metrics[f"lits_{year}"] = lits_disponibles[lits_disponibles['year'].dt.year == year]['total_lit_hospi_complete'].sum()
+        metrics[f"lits_{year}"] = lits_disponibles[lits_disponibles['year'].dt.year == year]['lit_hospi_complete'].sum()
     
     return metrics
 

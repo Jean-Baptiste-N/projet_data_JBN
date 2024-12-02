@@ -8,13 +8,12 @@ numpy
 seaborn
 db-dtypes
 pygwalker
-langchain_openai
 langchain
 langgraph
+langchain_openai
 langchain-community
 sqlalchemy-bigquery
 sqlalchemy
 langchain-experimental
 e2b
-langchain_experimental
 e2b-code-interpreter
