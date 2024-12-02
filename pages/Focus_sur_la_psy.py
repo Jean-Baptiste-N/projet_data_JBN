@@ -50,8 +50,8 @@ def load_data():
         # Chargement des données
         query = """
             SELECT *
-            FROM `projet-jbn-data-le-wagon.dbt_medical_analysis_join_total_morbidite.class_join_total_morbidite_population`
-            WHERE classification = 'PSY'
+            FROM `projet-jbn-data-le-wagon.dbt_medical_analysis_join_total_morbidite.class_join_total_morbidite_sexe_population`
+            WHERE classification = 'PSY' AND niveau = 'Régions'
         """
         df = client.query(query).to_dataframe()
         return df
@@ -117,13 +117,30 @@ if df is not None:
         )
         
         # Afficher les données pour la pathologie sélectionnée
+        # Afficher les données pour la pathologie sélectionnée
         if selected_pathology == "Toutes les pathologies":
-            path_data = df_filtered  # Utiliser toutes les données
+            path_data = df_filtered[
+                (df_filtered['sexe'] == selected_sex)
+            ]
         else:
-            path_data = df_filtered[df_filtered['nom_pathologie'] == selected_pathology]
-            
+            path_data = df_filtered[
+                (df_filtered['nom_pathologie'] == selected_pathology) &
+                (df_filtered['sexe'] == selected_sex)
+            ]
+        
+        # Calcul des métriques avec les filtres appliqués
         total_hospi = path_data['nbr_hospi'].sum()
-        avg_duration = path_data['AVG_duree_hospi'].mean()
+        
+        # Calcul de la durée moyenne en fonction de la sélection
+        if selected_pathology == "Toutes les pathologies":
+            avg_duration = df_filtered[
+                (df_filtered['sexe'] == selected_sex)
+            ]['AVG_duree_hospi'].mean()
+        else:
+            avg_duration = df_filtered[
+                (df_filtered['nom_pathologie'] == selected_pathology) &
+                (df_filtered['sexe'] == selected_sex)
+            ]['AVG_duree_hospi'].mean()
         
         col1, col2, col3, col4, col5 = st.columns(5)
         with col1:
@@ -133,7 +150,7 @@ if df is not None:
         with col3:
             st.metric("Indice comparatif", f"{path_data['indice_comparatif_tt_age_percent'].mean():.1f}%")
         with col4:
-            hospi_24h = path_data['hospi_total_24h'].sum()
+            hospi_24h = path_data['evolution_hospi_total_24h'].sum()
             st.metric("Hospitalisations < 24h", f"{hospi_24h/1_000:,.2f}K")
         with col5:
             # Sélectionner toutes les colonnes tranche_age_*
@@ -148,7 +165,7 @@ if df is not None:
         st.divider()
 
         # Ajout d'un sélecteur pour filtrer le nombre de pathologies à afficher
-        n_pathologies = st.slider("Nombre de pathologies à afficher", 5, 68, 20)
+        n_pathologies = st.slider("Nombre de pathologies à afficher", 3, 7, 7)
         
         # Top pathologies par nombre d'hospitalisations
         hospi_by_pathology = df_filtered.groupby('nom_pathologie').agg({

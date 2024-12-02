@@ -49,7 +49,7 @@ def load_data():
         # Chargement des données
         query = """
             SELECT *
-            FROM `projet-jbn-data-le-wagon.dbt_medical_analysis_join_total_morbidite.class_join_total_morbidite_population`
+            FROM `projet-jbn-data-le-wagon.dbt_medical_analysis_join_total_morbidite.class_join_total_morbidite_sexe_population`
         """
         df = client.query(query).to_dataframe()
         return df

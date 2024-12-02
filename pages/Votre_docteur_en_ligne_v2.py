@@ -36,7 +36,14 @@ st.markdown("""
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         margin-bottom: 1rem;
     }
+    .thinking-animation {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 10px 0;
+    }
     </style>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@2.0.8/dist/lottie-player.js"></script>
 """, unsafe_allow_html=True)
 
 # Titre de la page
@@ -185,13 +192,40 @@ N'hésitez pas à croiser les données pour fournir des analyses pertinentes.
     def update_thinking_status(placeholder, step):
         """Met à jour le statut de réflexion de l'agent.""" 
         thinking_states = {
-            'start': "🤔 Je réfléchis à votre question...",
-            'analyzing': "🔍 J'analyse les données médicales pertinentes...",
-            'querying': "📊 J'extrais les informations de la base de données...",
-            'formatting': "✨ Je formule une réponse claire et détaillée..."
+            'start': "Initialisation de l'analyse",
+            'understanding': "Compréhension de votre question",
+            'analyzing_1': "Analyse des données médicales - Phase 1",
+            'analyzing_2': "Analyse des données médicales - Phase 2",
+            'analyzing_3': "Analyse des données médicales - Phase 3",
+            'processing': "Traitement des informations hospitalières",
+            'querying': "Extraction des données pertinentes",
+            'calculating': "Calcul des statistiques médicales",
+            'validating': "Validation des résultats",
+            'formatting': "Formulation de la réponse"
         }
-        placeholder.markdown(thinking_states.get(step, "🤔 Je réfléchis..."))
-        time.sleep(1)  # Petit délai pour rendre les transitions visibles
+        
+        # HTML pour l'animation de chargement
+        loading_html = """
+            <div style="display: flex; justify-content: center; align-items: center; flex-direction: column; margin: 20px 0;">
+                <div style="width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                <style>
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                </style>
+            </div>
+        """
+        
+        status_html = f"""
+            <div style="text-align: center; padding: 10px; margin: 10px; background-color: #f8f9fa; border-radius: 10px;">
+                <h3 style="color: #3498db; margin-bottom: 10px;">{thinking_states.get(step, "Analyse en cours...")}</h3>
+                {loading_html}
+            </div>
+        """
+        
+        placeholder.markdown(status_html, unsafe_allow_html=True)
+        time.sleep(0.3)  # Réduit le délai à 0.3 secondes pour une progression plus rapide
 
     def get_contextual_suggestions(user_input):
 
@@ -247,20 +281,42 @@ N'hésitez pas à croiser les données pour fournir des analyses pertinentes.
                     try:
                         # Étape 1: Début de la réflexion
                         update_thinking_status(message_placeholder, 'start')
+                        time.sleep(0.2)
                         
-                        # Étape 2: Analyse de la question
-                        update_thinking_status(message_placeholder, 'analyzing')
+                        # Étape 2: Compréhension de la question
+                        update_thinking_status(message_placeholder, 'understanding')
+                        time.sleep(0.2)
+
+                        # Étape 3: Analyse de la question
+                        update_thinking_status(message_placeholder, 'analyzing_1')
+                        time.sleep(0.2)
+                        update_thinking_status(message_placeholder, 'analyzing_2')
+                        time.sleep(0.2)
+                        update_thinking_status(message_placeholder, 'analyzing_3')
+                        
                         response = st.session_state.agent.invoke(prompt)
                         
-                        # Étape 3: Requête et traitement
+                        # Étape 4: Traitement des informations
+                        update_thinking_status(message_placeholder, 'processing')
+                        time.sleep(0.2)
+
+                        # Étape 5: Requête et extraction des données
                         update_thinking_status(message_placeholder, 'querying')
-                        final_response = response.get('output', "Je n'ai pas pu générer une réponse.")
-                        
-                        # Étape 4: Formatage de la réponse
+                        time.sleep(0.2)
+
+                        # Étape 6: Calcul des statistiques
+                        update_thinking_status(message_placeholder, 'calculating')
+                        time.sleep(0.2)
+
+                        # Étape 7: Validation des résultats
+                        update_thinking_status(message_placeholder, 'validating')
+                        time.sleep(0.2)
+
+                        # Étape 8: Formatage de la réponse
                         update_thinking_status(message_placeholder, 'formatting')
-                        time.sleep(0.5)
-                        
-                        # Affichage de la réponse finale
+                        time.sleep(0.2)
+
+                        final_response = response.get('output', "Je n'ai pas pu générer une réponse.")
                         message_placeholder.markdown(final_response)
                         
                         # Ajouter la réponse à l'historique
@@ -292,12 +348,34 @@ N'hésitez pas à croiser les données pour fournir des analyses pertinentes.
                                     message_placeholder = st.empty()
                                     try:
                                         update_thinking_status(message_placeholder, 'start')
-                                        update_thinking_status(message_placeholder, 'analyzing')
+                                        time.sleep(0.2)
+                                        update_thinking_status(message_placeholder, 'understanding')
+                                        time.sleep(0.2)
+
+                                        update_thinking_status(message_placeholder, 'analyzing_1')
+                                        time.sleep(0.2)
+                                        update_thinking_status(message_placeholder, 'analyzing_2')
+                                        time.sleep(0.2)
+                                        update_thinking_status(message_placeholder, 'analyzing_3')
+                                        
                                         response = st.session_state.agent.invoke(suggestion)
+                                        
+                                        update_thinking_status(message_placeholder, 'processing')
+                                        time.sleep(0.2)
+
                                         update_thinking_status(message_placeholder, 'querying')
-                                        final_response = response.get('output', "Je n'ai pas pu générer une réponse.")
+                                        time.sleep(0.2)
+
+                                        update_thinking_status(message_placeholder, 'calculating')
+                                        time.sleep(0.2)
+
+                                        update_thinking_status(message_placeholder, 'validating')
+                                        time.sleep(0.2)
+
                                         update_thinking_status(message_placeholder, 'formatting')
-                                        time.sleep(0.5)
+                                        time.sleep(0.2)
+
+                                        final_response = response.get('output', "Je n'ai pas pu générer une réponse.")
                                         message_placeholder.markdown(final_response)
                                         st.session_state.messages.append({"role": "assistant", "content": final_response})
                                         st.rerun()
