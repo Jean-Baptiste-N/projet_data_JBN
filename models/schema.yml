@@ -5,13 +5,13 @@ sources:
     schema: morbidite_h
     tables:
       - name: taux_recours
-        identifier: tranche_age_hospi_clean
+        identifier: tableau_3_ren
         description: "test"
       - name: duree_sejours
-        identifier: duree_hospi_clean
+        identifier: tableau_2_ren
         description: "test"
       - name: nombre_hospit
-        identifier: nbr_hospi_clean
+        identifier: tableau_1_ren
         description: 'test'
 
       - name: class_services
