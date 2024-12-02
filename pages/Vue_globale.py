@@ -192,7 +192,7 @@ def load_with_progress():
 df_nbr_hospi, df_duree_hospi, df_tranche_age_hospi, df_capacite_hospi, df_complet, main_metrics = load_with_progress()
 
 # Titre principal avec style amélioré
-st.markdown("<h1 class='main-title' style='margin-top: -70px; margin-bottom: -8000px;'>🏥 Analyse hospitalière en France (2018-2022)</h1>", unsafe_allow_html=True)
+st.markdown("<h1 class='main-title' style='margin-top: -70px;'>🌍 Analyse hospitalière en France de 2018 à 2022</h1>", unsafe_allow_html=True)
 
 # Suite du code uniquement si les données sont chargées correctement
 if df_nbr_hospi is not None:
@@ -289,7 +289,7 @@ if df_nbr_hospi is not None:
             </div>
         """, unsafe_allow_html=True)
         
-        st.subheader("Nombre d'hospitalisations par année")
+        st.subheader("Nombre d'hospitalisations par années")
         
         # Affichage des métriques dans des cartes stylisées
         col1, col2, col3, col4, col5 = st.columns(5)
@@ -631,8 +631,8 @@ if df_nbr_hospi is not None:
         # Graphique combiné (scatter plot)
         # Fusion des données d'hospitalisation et de durée par année
         combined_data = pd.merge(
-            df_nbr_hospi_filtered.groupby(['nom_pathologie', 'year'])['nbr_hospi'].sum().reset_index(),
-            df_duree_hospi_filtered.groupby(['nom_pathologie', 'year'])['AVG_duree_hospi'].mean().reset_index(),
+            df_nbr_hospi.groupby(['nom_pathologie', 'year'])['nbr_hospi'].sum().reset_index(),
+            df_duree_hospi.groupby(['nom_pathologie', 'year'])['AVG_duree_hospi'].mean().reset_index(),
             on=['nom_pathologie', 'year']
         )
         
@@ -699,13 +699,13 @@ if df_nbr_hospi is not None:
         # Graphique 3D
         # Fusion des données avec les trois métriques
         combined_data_3d = pd.merge(
-            df_nbr_hospi_filtered.groupby(['nom_pathologie', 'year'])['nbr_hospi'].sum().reset_index(),
-            df_duree_hospi_filtered.groupby(['nom_pathologie', 'year'])['AVG_duree_hospi'].mean().reset_index(),
+            df_nbr_hospi.groupby(['nom_pathologie', 'year'])['nbr_hospi'].sum().reset_index(),
+            df_duree_hospi.groupby(['nom_pathologie', 'year'])['AVG_duree_hospi'].mean().reset_index(),
             on=['nom_pathologie', 'year']
         )
         combined_data_3d = pd.merge(
             combined_data_3d,
-            df_tranche_age_hospi_filtered.groupby(['nom_pathologie', 'year'])['indice_comparatif_tt_age_percent'].mean().reset_index(),
+            df_tranche_age_hospi.groupby(['nom_pathologie', 'year'])['indice_comparatif_tt_age_percent'].mean().reset_index(),
             on=['nom_pathologie', 'year']
         )
 
@@ -872,7 +872,7 @@ if df_nbr_hospi is not None:
                     xanchor="left"
                 )
             ],
-            margin=dict(t=100, b=50, l=50, r=50)  # Augmenter la marge du haut pour l'annotation
+            margin=dict(t=100, b=50, l=50, r=50)  # Augmenter la marge du haut pour plus d'espace
         )
 
         # Ajout de configuration pour une animation plus fluide
@@ -928,22 +928,22 @@ if df_nbr_hospi is not None:
         
         # Calculer les évolutions année par année
         evolutions_by_year = {}
-        years = sorted(df_nbr_hospi_filtered['year'].dt.year.unique())
+        years = sorted(df_nbr_hospi['year'].dt.year.unique())
         
         for i in range(len(years)-1):
             current_year = years[i]
             next_year = years[i+1]
             
             # Données pour l'année courante et suivante
-            current_data = df_nbr_hospi_filtered[df_nbr_hospi_filtered['year'].dt.year == current_year].groupby('nom_pathologie')['nbr_hospi'].sum()
-            next_data = df_nbr_hospi_filtered[df_nbr_hospi_filtered['year'].dt.year == next_year].groupby('nom_pathologie')['nbr_hospi'].sum()
+            current_data = df_nbr_hospi[df_nbr_hospi['year'].dt.year == current_year].groupby('nom_pathologie')['nbr_hospi'].sum()
+            next_data = df_nbr_hospi[df_nbr_hospi['year'].dt.year == next_year].groupby('nom_pathologie')['nbr_hospi'].sum()
             
             # Calculer l'évolution en pourcentage
             evolution = ((next_data - current_data) / current_data * 100).fillna(0)
             evolutions_by_year[f'{current_year}-{next_year}'] = evolution
         
         # Créer le DataFrame de base avec le nombre total d'hospitalisations
-        df_summary = df_nbr_hospi_filtered.groupby('nom_pathologie')['nbr_hospi'].sum().reset_index()
+        df_summary = df_nbr_hospi.groupby('nom_pathologie')['nbr_hospi'].sum().reset_index()
         
         # Ajouter les évolutions année par année
         for period, evolution in evolutions_by_year.items():
@@ -954,8 +954,8 @@ if df_nbr_hospi is not None:
             )
         
         # Calculer l'évolution globale (2018-2022)
-        hospi_2018 = df_nbr_hospi_filtered[df_nbr_hospi_filtered['year'].dt.year == 2018].groupby('nom_pathologie')['nbr_hospi'].sum()
-        hospi_2022 = df_nbr_hospi_filtered[df_nbr_hospi_filtered['year'].dt.year == 2022].groupby('nom_pathologie')['nbr_hospi'].sum()
+        hospi_2018 = df_nbr_hospi[df_nbr_hospi['year'].dt.year == 2018].groupby('nom_pathologie')['nbr_hospi'].sum()
+        hospi_2022 = df_nbr_hospi[df_nbr_hospi['year'].dt.year == 2022].groupby('nom_pathologie')['nbr_hospi'].sum()
         evolution_globale = ((hospi_2022 - hospi_2018) / hospi_2018 * 100).fillna(0)
         
         # Ajouter l'évolution globale au DataFrame
@@ -1185,6 +1185,51 @@ if df_nbr_hospi is not None:
                 f"{indice_comp:.1f}%"
             )
 
+        # Graphique simplifié de la distribution par âge
+        st.subheader(" Distribution par tranche d'âge")
+        
+        # Calcul des moyennes par groupe d'âge
+        age_means = {
+            '0 à 3 ans': df_tranche_age_hospi_filtered[['tranche_age_0_1', 'tranche_age_1_4']].mean(axis=1).mean(),
+            '4 à 17 ans': df_tranche_age_hospi_filtered[['tranche_age_5_14', 'tranche_age_15_24']].mean(axis=1).mean(),
+            '18 à 59 ans': df_tranche_age_hospi_filtered[['tranche_age_25_34', 'tranche_age_35_44', 'tranche_age_45_54', 'tranche_age_55_64']].mean(axis=1).mean(),
+            '60 à 69 ans': df_tranche_age_hospi_filtered['tranche_age_65_74'].mean(),
+            '70 à 79 ans': df_tranche_age_hospi_filtered['tranche_age_75_84'].mean(),
+            '80 ans et plus': df_tranche_age_hospi_filtered['tranche_age_85_et_plus'].mean()
+        }
+        
+        # Conversion en pourcentages
+        total = sum(age_means.values())
+        age_percentages = {k: (v/total)*100 for k, v in age_means.items()}
+        
+        # Création du DataFrame pour le graphique
+        df_simplified = pd.DataFrame({
+            'Tranche d\'âge': list(age_percentages.keys()),
+            'Pourcentage': list(age_percentages.values())
+        })
+        
+        fig = px.bar(df_simplified,
+                    y='Tranche d\'âge',
+                    x='Pourcentage',
+                    orientation='h',
+                    title='Déclinaison par classe d\'âge')
+        
+        colors = ['#40CCC3', '#40CCC3', '#F4A261', '#1E4B9C', '#E76F51', '#264653']
+        
+        fig.update_traces(marker_color=colors,
+                         hovertemplate="<b>%{y}</b><br>%{x:.1f}%<extra></extra>")
+        
+        fig.update_layout(
+            height=400,
+            template='plotly_white',
+            showlegend=False,
+            xaxis_title="Pourcentage (%)",
+            yaxis_title="",
+            yaxis={'categoryorder':'total ascending'}
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+        
     @st.cache_data
     def prepare_hospi_data():
         hospi_columns = ['year', 'region', 'nom_region', 'pathologie', 'nom_pathologie', 'nbr_hospi']
@@ -1411,3 +1456,8 @@ if df_nbr_hospi is not None:
             'Hospitalisations': '{:,.0f}',
             'Évolution (%)': '{:+.1f}%'
         }))
+        st.markdown("### 📊 Indicateurs nationaux", unsafe_allow_html=True)
+        st.markdown("### 🗺️ Répartition régionale", unsafe_allow_html=True)
+        st.markdown("### 📈 Tendances", unsafe_allow_html=True)
+        st.markdown("### 📉 Comparaisons", unsafe_allow_html=True)
+        st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")

@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from google.cloud import bigquery
+from plotly.subplots import make_subplots
 
 
 # Définition des couleurs du thème
@@ -36,10 +37,8 @@ st.markdown ("""
     </style>
 """, unsafe_allow_html=True)
 
-
 # Titre principal
-st.markdown ("<h1 class='main-title' style='margin-top: -70px; margin-bottom: -8000px;'>🏥 Focus sur la Chirurgie</h1>", unsafe_allow_html=True)
-
+st.markdown ("<h1 class='main-title' style='margin-top: -70px;'>⚕️ Service deChirurgie</h1>", unsafe_allow_html=True)
 
 # Fonction de chargement des données
 @st.cache_resource
@@ -49,44 +48,36 @@ def load_data():
         gcp_service_account = st.secrets["gcp_service_account"]
         client = bigquery.Client.from_service_account_info(gcp_service_account)
         
-        # Chargement des données
+        # Requête SQL pour les données de chirurgie
         query = """
             SELECT *
             FROM `projet-jbn-data-le-wagon.dbt_medical_analysis_join_total_morbidite.class_join_total_morbidite_population`
             WHERE classification = 'C'
         """
+        
         df = client.query(query).to_dataframe()
         return df
+        
     except Exception as e:
-        st.error (f"Erreur lors du chargement des données : {str(e)}")
+        st.error(f"Erreur lors du chargement des données : {str(e)}")
         return None
-
 
 # Chargement des données
 df = load_data()
 
-
 if df is not None:
     # Filtres principaux en colonnes
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
 
     with col1:
-        # Sélection du niveau administratif
-        niveau_administratif = st.selectbox(
-            "Niveau administratif",
-            ["Régions", "Départements"],
-            key="niveau_administratif_chir"
-        )
-
-    with col2:
         # Sélection du sexe
         selected_sex = st.selectbox(
             "Sexe",
-            ["Ensemble", "Homme", "Femme"],
+            ["Ensemble", "Femme"],
             key="selecteur_sexe_chir"
         )
 
-    with col3:
+    with col2:
         # Filtre années avec une liste déroulante simple
         years = sorted(df['annee'].unique(), reverse=True)
         years_options = ["Toutes les années"] + [str(year) for year in years]
@@ -108,7 +99,6 @@ if df is not None:
         df_filtered = df_filtered[df_filtered['annee'] == int(selected_year)]
 
     # Affichage des métriques clés
-    st.subheader("Statistiques clés")
     col1, col2, col3, col_help = st.columns([1, 1, 1, 0.01])
     
     with col1:
@@ -127,87 +117,184 @@ if df is not None:
         st.metric(
             label="help",
             value="",
-            help="""📊 Ces métriques clés résument les données chirurgicales :
+            help="""📊 Ces métriques clés résument les données psychiatriques :
             
-            - Total des hospitalisations : nombre total d'interventions chirurgicales
-            - Durée moyenne : temps moyen d'hospitalisation post-chirurgie
-            - Évolution : tendance des interventions par rapport à la période précédente"""
+            - Total des hospitalisations : nombre total d'hospitalisations en psychiatrie
+            - Durée moyenne : temps moyen de séjour en service psychiatrique
+            - Évolution : tendance des hospitalisations psychiatriques par rapport à la période précédente
+            
+            Note : Les durées de séjour en psychiatrie sont généralement plus longues que dans les autres services."""
         )
-    
-    # Préparation des données pour le graphique 3D
-    group_cols = ['annee']
-    location_label = 'Région' if niveau_administratif == "Régions" else 'Département'
-    
-    if niveau_administratif == "Régions":
-        df_filtered['location_name'] = df_filtered['nom_region']
-    else:
-        df_filtered['location_name'] = df_filtered['nom_region']
-        
-    group_cols.append('location_name')
-    df_evolution = df_filtered.groupby(group_cols)['nbr_hospi'].sum().reset_index()
-    
-    # Création du graphique 3D
-    fig_3d = go.Figure(data=[go.Scatter3d(
-        x=df_evolution['annee'],
-        y=df_evolution['location_name'],
-        z=df_evolution['nbr_hospi'],
-        mode='markers',
-        marker=dict(
-            size=10,
-            color=pd.Categorical(df_evolution['location_name']).codes,
-            colorscale='Turbo',
-            opacity=0.8,
-            showscale=False
-        ),
-        hovertemplate=
-        f'<b>{location_label}:</b> %{{y}}<br>' +
-        '<b>Année:</b> %{x}<br>' +
-        '<b>Hospitalisations:</b> %{z:,.0f}<br>'
-    )])
+    st.divider()
 
-    # Mise en page du graphique 3D
-    fig_3d.update_layout(
-        title=f'Évolution des hospitalisations en Chirurgie par {location_label.lower()}',
-        scene=dict(
-            xaxis_title='Année',
-            yaxis_title=location_label,
-            zaxis=dict(
-                title='Nombre d\'hospitalisations',
-                type='log',
-                exponentformat='none'
-            ),
-            camera=dict(
-                up=dict(x=0, y=0, z=1),
-                center=dict(x=0, y=0, z=0),
-                eye=dict(x=2.5, y=2.5, z=2)
+    # Système de recherche avec autocomplétion
+    all_pathologies = sorted(df_filtered['nom_pathologie'].unique())
+    search_term = st.text_input("🔍 Rechercher une intervention chirurgicale spécifique pour obtenir des détails", "")
+    
+    # Filtrer et suggérer les pathologies pendant la saisie
+    if search_term:
+        filtered_pathologies = [path for path in all_pathologies if search_term.lower() in path.lower()]
+        if filtered_pathologies:
+            selected_pathology = st.selectbox(
+                "Sélectionner une intervention dans les suggestions",
+                filtered_pathologies,
+                key="pathology_selector_chir"
             )
+            
+            # Afficher les données pour la pathologie sélectionnée
+            path_data = df_filtered[df_filtered['nom_pathologie'] == selected_pathology]
+            total_hospi = path_data['nbr_hospi'].sum()
+            avg_duration = path_data['AVG_duree_hospi'].mean()
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Nombre total d'interventions chirurgicales", f"{total_hospi:,.0f}")
+            with col2:
+                st.metric("Durée moyenne de séjour", f"{avg_duration:.1f} jours")
+        else:
+            st.warning("Aucune intervention trouvée avec ce terme de recherche.")
+
+    st.divider()
+    
+    # Ajout d'un sélecteur pour filtrer le nombre de pathologies à afficher
+    n_pathologies = st.slider("Nombre d'interventions à afficher", 5, 50, 20)
+    
+    # Top pathologies par nombre d'hospitalisations
+    hospi_by_pathology = df_filtered.groupby('nom_pathologie').agg({
+        'nbr_hospi': 'sum',
+        'AVG_duree_hospi': 'mean'
+    }).reset_index()
+    
+    hospi_by_pathology = hospi_by_pathology.sort_values(by='nbr_hospi', ascending=False).head(n_pathologies)
+
+    # Création d'une figure avec deux axes Y
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+    # Ajout des barres pour le nombre d'interventions
+    fig.add_trace(
+        go.Bar(
+            x=hospi_by_pathology['nom_pathologie'],
+            y=hospi_by_pathology['nbr_hospi'],
+            name="Nombre d'interventions",
+            marker_color=MAIN_COLOR,
+            customdata=hospi_by_pathology[['nom_pathologie', 'nbr_hospi']],
+            hovertemplate="<b>Intervention:</b> %{customdata[0]}<br>" +
+                        "<b>Interventions:</b> %{customdata[1]:,.0f}<br><extra></extra>"
         ),
-        width=1000,
-        height=1000
+        secondary_y=False
     )
 
-    # Affichage du graphique
+    # Ajout de la ligne pour la durée moyenne
+    fig.add_trace(
+        go.Scatter(
+            x=hospi_by_pathology['nom_pathologie'],
+            y=hospi_by_pathology['AVG_duree_hospi'],
+            name="Durée moyenne de séjour",
+            line=dict(color=SECONDARY_COLOR, width=2),
+            mode='lines+markers',
+            marker=dict(size=6),
+            customdata=hospi_by_pathology[['nom_pathologie', 'AVG_duree_hospi']],
+            hovertemplate="<b>Intervention:</b> %{customdata[0]}<br>" +
+                        "<b>Durée moyenne:</b> %{customdata[1]:.1f} jours<br><extra></extra>"
+        ),
+        secondary_y=True
+    )
+
+    # Mise à jour de la mise en page
+    fig.update_layout(
+        title=dict(
+            text='Interventions chirurgicales : Volume et durée moyenne de séjour',
+            y=0.95,
+            x=0.5,
+            xanchor='center',
+            yanchor='top'
+        ),
+        height=500,
+        template='plotly_white',
+        showlegend=False,
+        margin=dict(t=100, b=50, l=50, r=50)
+    )
+
+    # Mise à jour des titres des axes Y
+    fig.update_yaxes(title_text="Nombre d'interventions", secondary_y=False)
+    fig.update_yaxes(title_text="Durée moyenne de séjour (jours)", secondary_y=True)
+
+    # Affichage du graphique avec une colonne d'aide
     col_chart, col_help = st.columns([1, 0.01])
     with col_chart:
-        st.plotly_chart(fig_3d, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True)
     with col_help:
-        st.metric(
-            label="help",
-            value="",
-            help="""🔍 Ce graphique 3D visualise l'évolution des interventions chirurgicales :
-            
-            Navigation :
-            - Utilisez la souris pour faire pivoter le graphique
-            - Double-cliquez pour réinitialiser la vue
-            - Survolez les points pour voir les détails
-            
-            Axes :
-            - X : Année
-            - Y : Région/Département
-            - Z : Nombre d'interventions (échelle logarithmique)
-            
-            Les couleurs différentes représentent les différentes régions/départements."""
+        st.metric(label="help", value="", help="Ce graphique montre la relation entre le nombre d'interventions chirurgicales (barres) et la durée moyenne de séjour (ligne) pour les interventions les plus fréquentes.")
+
+    # Tableau récapitulatif détaillé
+    st.subheader("Évolution des interventions chirurgicales (2018-2022)")
+    
+    # Calculer les évolutions année par année
+    evolutions_by_year = {}
+    years = sorted(df['annee'].unique())
+    
+    for i in range(len(years)-1):
+        current_year = years[i]
+        next_year = years[i+1]
+        
+        # Données pour l'année courante et suivante
+        current_data = df[df['annee'] == current_year].groupby('nom_pathologie')['nbr_hospi'].sum()
+        next_data = df[df['annee'] == next_year].groupby('nom_pathologie')['nbr_hospi'].sum()
+        
+        # Calculer l'évolution en pourcentage
+        evolution = ((next_data - current_data) / current_data * 100).fillna(0)
+        evolutions_by_year[f'{current_year}-{next_year}'] = evolution
+    
+    # Créer le DataFrame de base avec le nombre total d'interventions
+    df_summary = df.groupby('nom_pathologie')['nbr_hospi'].sum().reset_index()
+    
+    # Ajouter les évolutions année par année
+    for period, evolution in evolutions_by_year.items():
+        df_summary = df_summary.merge(
+            evolution.reset_index().rename(columns={'nbr_hospi': f'Evolution_{period}'}),
+            on='nom_pathologie',
+            how='left'
         )
+    
+    # Calculer l'évolution globale (2018-2022)
+    hospi_2018 = df[df['annee'] == 2018].groupby('nom_pathologie')['nbr_hospi'].sum()
+    hospi_2022 = df[df['annee'] == 2022].groupby('nom_pathologie')['nbr_hospi'].sum()
+    evolution_globale = ((hospi_2022 - hospi_2018) / hospi_2018 * 100).fillna(0)
+    
+    # Ajouter l'évolution globale au DataFrame
+    df_summary = df_summary.merge(
+        evolution_globale.reset_index().rename(columns={'nbr_hospi': 'Evolution_globale'}),
+        on='nom_pathologie',
+        how='left'
+    )
+    
+    # Trier par évolution globale décroissante
+    df_summary = df_summary.sort_values('Evolution_globale', ascending=False)
+    
+    # Renommer les colonnes pour l'affichage
+    df_summary.columns = ['Intervention', 'Interventions'] + [f'Évol. {period} (%)' for period in evolutions_by_year.keys()] + ['Évol. 2018-2022 (%)']
+    
+    # Colonnes d'évolution pour le gradient
+    evolution_columns = ['Évol. 2018-2019 (%)', 'Évol. 2019-2020 (%)', 
+                       'Évol. 2020-2021 (%)', 'Évol. 2021-2022 (%)', 
+                       'Évol. 2018-2022 (%)']
+    
+    # Formater et afficher le tableau
+    st.dataframe(
+        df_summary.style.format({
+            'Interventions': '{:,.0f}',
+            'Évol. 2018-2019 (%)': '{:+.1f}%',
+            'Évol. 2019-2020 (%)': '{:+.1f}%',
+            'Évol. 2020-2021 (%)': '{:+.1f}%',
+            'Évol. 2021-2022 (%)': '{:+.1f}%',
+            'Évol. 2018-2022 (%)': '{:+.1f}%'
+        }).background_gradient(
+            subset=evolution_columns,
+            cmap='RdYlBu_r'
+        ),
+        use_container_width=True
+    )
 
 else:
     st.error("Impossible de charger les données. Veuillez réessayer plus tard.")
+st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")

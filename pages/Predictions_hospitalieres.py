@@ -29,7 +29,7 @@ SECONDARY_COLOR = '#AFDC8F'  # Vert clair complémentaire
 ACCENT_COLOR = '#3D7317'  # Vert foncé pour les accents
 
 # Titre principal
-st.markdown("<h1 class='main-title' style='margin-top: -70px; margin-bottom: -8000px;'>🔮 Prédictions Hospitalières</h1>", unsafe_allow_html=True)
+st.markdown("<h1 class='main-title' style='margin-top: -70px;'>🎲 Prédictions Hospitalières</h1>", unsafe_allow_html=True)
 
 # Sélecteur de type de prédiction
 prediction_type = st.selectbox(
@@ -197,7 +197,7 @@ else:  # Durées de séjour
         )
 
 # Métriques de performance
-st.markdown("### 📊 Métriques de performance du modèle")
+st.markdown("### 📊 Modèle de prédiction", unsafe_allow_html=True)
 col1, col2, col3, col_help = st.columns([1, 1, 1, 0.01])
 with col1:
     st.metric("Précision du modèle", "87%", "↑ 2%")
@@ -219,6 +219,18 @@ with col_help:
         ↑ : amélioration
         ↓ : diminution"""
     )
+
+# Résultats
+st.markdown("### 📈 Résultats", unsafe_allow_html=True)
+st.write("Les résultats sont affichés ci-dessus en fonction du type de prédiction sélectionné.")
+
+# Performance du modèle
+st.markdown("### 📉 Performance du modèle", unsafe_allow_html=True)
+st.write("Les métriques de performance sont affichées ci-dessus.")
+
+# Prévisions
+st.markdown("### 🎯 Prévisions", unsafe_allow_html=True)
+st.write("Les prévisions sont affichées ci-dessus en fonction du type de prédiction sélectionné.")
 
 # Notes méthodologiques
 with st.expander("📝 Notes méthodologiques"):

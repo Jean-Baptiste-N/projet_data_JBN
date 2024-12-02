@@ -14,7 +14,7 @@ import time
 MAIN_COLOR = "#FF4B4B"
 
 # Style CSS personnalisé
-st.markdown("""
+st.markdown(""" 
     <style>
     .main-title {
         color: #003366;
@@ -40,7 +40,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Titre de la page
-st.markdown("<h1 class='main-title' style='margin-top: -65px; margin-bottom: -8000px;'>Votre Docteur en Ligne V2 - Assistant SQL</h1>", unsafe_allow_html=True)
+st.markdown("<h1 class='main-title' style='margin-top: -70px;'>🤖 Assistant IA Médical</h1>", unsafe_allow_html=True)
 
 try:
     # Configuration Azure OpenAI
@@ -53,7 +53,7 @@ try:
 
     @st.cache_resource
     def init_database():
-        """Initialise la connexion à la base de données."""
+        """Initialise la connexion à la base de données.""" 
         try:
             # Chargement des secrets
             gcp_service_account = st.secrets["gcp_service_account"]
@@ -79,7 +79,7 @@ try:
 
     @st.cache_resource
     def init_agent():
-        """Initialise l'agent LangChain."""
+        """Initialise l'agent LangChain.""" 
         try:
             # Initialiser le modèle LLM
             llm = AzureChatOpenAI(
@@ -158,7 +158,7 @@ Taux et indices
 - indice_comparatif_tt_age_percent (float64) : Indice standardisé en pourcentage.
 - 54 à 59. evolution_tx_* (float64) : Variations de taux brut, standardisé, et indices comparatifs en pourcentage.
 Divers
-- classification (object) : Classification en terme de service médical : M (Médecine), C (Chirurgie), SSR (soins de suite et de réadaptation), O (Obstétrique), ESND (Établissement de santé non défini), PSY (Psychothérapie).
+- classification (object) : Classification en terme de service médical : M (Médecine), C (Chirurgie), SSR (soins de suite et de réadaptation), O (Obstétrique), ESND (Établissement de soin longue durée), PSY (Psychothérapie).
 - population (Int64) : Population totale associée par région et département (valeurs dupliqués).
 - evolution_percent_indice_comparatif_tt_age_percent (float64) : Variation en pourcentage de l'indice comparatif pour tous âges.
 
@@ -181,7 +181,7 @@ N'hésitez pas à croiser les données pour fournir des analyses pertinentes.
             return None
 
     def update_thinking_status(placeholder, step):
-        """Met à jour le statut de réflexion de l'agent."""
+        """Met à jour le statut de réflexion de l'agent.""" 
         thinking_states = {
             'start': "🤔 Je réfléchis à votre question...",
             'analyzing': "🔍 J'analyse les données médicales pertinentes...",
@@ -271,7 +271,7 @@ N'hésitez pas à croiser les données pour fournir des analyses pertinentes.
         # Afficher les suggestions après chaque réponse
         if st.session_state.messages and st.session_state.messages[-1]["role"] == "assistant":
             with suggestions_container:
-                st.markdown("### 💡 Pour approfondir :")
+                st.markdown("### 💬 Discussion")
                 suggestions = get_contextual_suggestions(st.session_state.messages[-2]["content"])  # Get suggestions based on last user message
                 
                 # Créer des colonnes pour les suggestions
@@ -285,7 +285,7 @@ N'hésitez pas à croiser les données pour fournir des analyses pertinentes.
                                 st.session_state.messages.append({"role": "user", "content": suggestion})
                                 with st.chat_message("user"):
                                     st.markdown(suggestion)
-                                
+                                 
                                 with st.chat_message("assistant"):
                                     message_placeholder = st.empty()
                                     try:

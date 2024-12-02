@@ -258,7 +258,7 @@ if df is not None:
         'O': 'Obstétrique',
         'PSY': 'Psychiatrie',
         'SSR': 'Soins de suite et réadaptation',
-        'ESND': 'Établissement non défini'
+        'ESND': 'Établissement de soin longue durée'
     }
     
     selected_service = st.selectbox(

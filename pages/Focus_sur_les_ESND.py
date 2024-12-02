@@ -5,7 +5,6 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 from google.cloud import bigquery
 
-
 # Définition des couleurs du thème
 MAIN_COLOR = '#003366'  # Bleu marine principal
 SECONDARY_COLOR = '#AFDC8F'  # Vert clair complémentaire
@@ -37,10 +36,8 @@ st.markdown ("""
     </style>
 """, unsafe_allow_html=True)
 
-
 # Titre principal
-st.markdown ("<h1 class='main-title' style='margin-top: -70px;'>🏥 Service de Médecine</h1>", unsafe_allow_html=True)
-
+st.markdown ("<h1 class='main-title' style='margin-top: -70px;'>🏥 Service ESND (Établissements de soins longue durée)</h1>", unsafe_allow_html=True)
 
 # Fonction de chargement des données
 @st.cache_resource
@@ -50,18 +47,16 @@ def load_data():
         gcp_service_account = st.secrets["gcp_service_account"]
         client = bigquery.Client.from_service_account_info(gcp_service_account)
         
-        # Requête SQL pour les données de médecine
+        # Chargement des données
         query = """
             SELECT *
             FROM `projet-jbn-data-le-wagon.dbt_medical_analysis_join_total_morbidite.class_join_total_morbidite_population`
-            WHERE classification = 'M'
+            WHERE classification = 'ESND'
         """
-        
         df = client.query(query).to_dataframe()
         return df
-        
     except Exception as e:
-        st.error(f"Erreur lors du chargement des données : {str(e)}")
+        st.error (f"Erreur lors du chargement des données : {str(e)}")
         return None
 
 # Chargement des données
@@ -76,7 +71,7 @@ if df is not None:
         selected_sex = st.selectbox(
             "Sexe",
             ["Ensemble", "Femme"],
-            key="selecteur_sexe_med"
+            key="selecteur_sexe_esnd"
         )
 
     with col2:
@@ -86,7 +81,7 @@ if df is not None:
         selected_year = st.selectbox(
             "Année", 
             years_options, 
-            key="year_filter_med"
+            key="year_filter_esnd"
         )
     
     # Filtrage des données selon les sélections
@@ -100,7 +95,7 @@ if df is not None:
     if selected_year != "Toutes les années":
         df_filtered = df_filtered[df_filtered['annee'] == int(selected_year)]
 
-        # Affichage des métriques clés
+    # Affichage des métriques clés
     col1, col2, col3, col_help = st.columns([1, 1, 1, 0.01])
     
     with col1:
@@ -128,9 +123,10 @@ if df is not None:
             Note : Les durées de séjour en psychiatrie sont généralement plus longues que dans les autres services."""
         )
     st.divider()
+
     # Système de recherche avec autocomplétion
     all_pathologies = sorted(df_filtered['nom_pathologie'].unique())
-    search_term = st.text_input("🔍 Rechercher une pathologie spécifique en médecine pour obtenir des détails", "")
+    search_term = st.text_input("🔍 Rechercher une pathologie en ESND pour obtenir des détails", "")
     
     # Filtrer et suggérer les pathologies pendant la saisie
     if search_term:
@@ -139,7 +135,7 @@ if df is not None:
             selected_pathology = st.selectbox(
                 "Sélectionner une pathologie dans les suggestions",
                 filtered_pathologies,
-                key="pathology_selector_med"
+                key="pathology_selector_esnd"
             )
             
             # Afficher les données pour la pathologie sélectionnée
@@ -149,16 +145,14 @@ if df is not None:
             
             col1, col2 = st.columns(2)
             with col1:
-                st.metric("Nombre total d'hospitalisations en médecine", f"{total_hospi:,.0f}")
+                st.metric("Nombre total d'hospitalisations en ESND", f"{total_hospi:,.0f}")
             with col2:
                 st.metric("Durée moyenne de séjour", f"{avg_duration:.1f} jours")
         else:
             st.warning("Aucune pathologie trouvée avec ce terme de recherche.")
-
-    st.divider()
     
     # Ajout d'un sélecteur pour filtrer le nombre de pathologies à afficher
-    n_pathologies = st.slider("Nombre de pathologies à afficher", 5, 68, 20)
+    n_pathologies = st.slider("Nombre de pathologies à afficher", 3, 7, 7)
     
     # Top pathologies par nombre d'hospitalisations
     hospi_by_pathology = df_filtered.groupby('nom_pathologie').agg({
@@ -204,7 +198,7 @@ if df is not None:
     # Mise à jour de la mise en page
     fig.update_layout(
         title=dict(
-            text='Pathologies médicales : Hospitalisations et durée moyenne de séjour',
+            text='Pathologies en ESND : Hospitalisations et durée moyenne de séjour',
             y=0.95,
             x=0.5,
             xanchor='center',
@@ -225,10 +219,10 @@ if df is not None:
     with col_chart:
         st.plotly_chart(fig, use_container_width=True)
     with col_help:
-        st.metric(label="help", value="", help="Ce graphique montre la relation entre le nombre d'hospitalisations (barres) et la durée moyenne de séjour (ligne) pour les pathologies médicales les plus fréquentes.")
+        st.metric(label="help", value="", help="Ce graphique montre la relation entre le nombre d'hospitalisations (barres) et la durée moyenne de séjour (ligne) pour les pathologies les plus fréquentes en ESND.")
 
     # Tableau récapitulatif détaillé
-    st.subheader("Évolution des pathologies médicales (2018-2022)")
+    st.subheader("Évolution des pathologies en ESND (2018-2022)")
     
     # Calculer les évolutions année par année
     evolutions_by_year = {}
@@ -295,12 +289,6 @@ if df is not None:
         ),
         use_container_width=True
     )
-
-    st.markdown("### 📈 Évolution des hospitalisations")
-    st.markdown("### 🗺️ Répartition géographique")
-    st.markdown("### 📉 Analyse temporelle")
-    st.markdown("### 🏥 Capacité d'accueil")
-    st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")
 
 else:
     st.error("Impossible de charger les données. Veuillez réessayer plus tard.")

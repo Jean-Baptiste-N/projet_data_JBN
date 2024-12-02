@@ -86,7 +86,7 @@ def get_data_context():
                     'SSR': 'Soins de suite et réadaptation',
                     'O': 'Obstétrique',
                     'PSY': 'Psychiatrie',
-                    'ESND': 'Établissement non défini'
+                    'ESND': 'Établissement de soin longue durée'
                 }.items():
                     service_data = df_complet[
                         (df_complet['classification'] == code) & 
