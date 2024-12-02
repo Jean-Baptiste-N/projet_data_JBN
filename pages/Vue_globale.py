@@ -605,7 +605,7 @@ if df_nbr_hospi is not None:
             height=500,
             template='plotly_white',
             showlegend=False,
-            margin=dict(t=100, b=50, l=50, r=50),  # Augmenter la marge du haut (t) pour plus d'espace
+            margin=dict(t=100, b=50, l=50, r=50),  # Augmenter la marge du haut pour plus d'espace
         )
 
         # Mise à jour des titres des axes Y
@@ -816,7 +816,13 @@ if df_nbr_hospi is not None:
         
         # Mise en page du graphique 3D
         fig.update_layout(
-            title='Distribution des pathologies',
+            title=dict(
+                text='Évolution des pathologies selon trois dimensions clés',
+                y=0.95,
+                x=0.4,
+                xanchor='right',
+                yanchor='top'
+            ),
             scene=dict(
                 xaxis_title='Nombre d\'hospitalisations',
                 yaxis_title='Durée moyenne de séjour (jours)',
@@ -838,6 +844,27 @@ if df_nbr_hospi is not None:
             ),
             width=800,
             sliders=sliders,
+            annotations=[
+                dict(
+                    text="<b>Légende</b> : <br>La taille des points représente le nombre d'hospitalisations<br>La couleur indique la durée moyenne de séjour",
+                    showarrow=False,
+                    xref="paper", yref="paper",
+                    x=0.8, y=1.1,
+                    align="left",
+                    xanchor="left"
+                )
+            ],
+            margin=dict(t=100, b=50, l=50, r=50)  # Augmenter la marge du haut pour l'annotation
+        )
+
+        # Ajout de configuration pour une animation plus fluide
+        fig.update_traces(
+            hoverinfo="none",  # Désactiver temporairement le hover pendant l'animation
+            customdata=combined_data_3d[['nom_pathologie', 'nbr_hospi', 'AVG_duree_hospi', 'indice_comparatif_tt_age_percent']].values,
+        )
+        
+        # Ajout des boutons de contrôle pour l'animation
+        fig.update_layout(
             updatemenus=[{
                 "buttons": [
                     {
@@ -871,13 +898,101 @@ if df_nbr_hospi is not None:
             }]
         )
 
-        # Ajout de configuration pour une animation plus fluide
-        fig.update_traces(
-            hoverinfo="none",  # Désactiver temporairement le hover pendant l'animation
-            customdata=combined_data_3d[['nom_pathologie', 'nbr_hospi', 'AVG_duree_hospi', 'indice_comparatif_tt_age_percent']].values,
+        # Affichage du graphique
+        st.plotly_chart(fig, use_container_width=True)
+
+        # Tableau récapitulatif détaillé
+        st.subheader("Évolution des pathologies (2018-2022)")
+        
+        # Calculer les évolutions année par année
+        evolutions_by_year = {}
+        years = sorted(df_nbr_hospi_filtered['year'].dt.year.unique())
+        
+        for i in range(len(years)-1):
+            current_year = years[i]
+            next_year = years[i+1]
+            
+            # Données pour l'année courante et suivante
+            current_data = df_nbr_hospi_filtered[df_nbr_hospi_filtered['year'].dt.year == current_year].groupby('nom_pathologie')['nbr_hospi'].sum()
+            next_data = df_nbr_hospi_filtered[df_nbr_hospi_filtered['year'].dt.year == next_year].groupby('nom_pathologie')['nbr_hospi'].sum()
+            
+            # Calculer l'évolution en pourcentage
+            evolution = ((next_data - current_data) / current_data * 100).fillna(0)
+            evolutions_by_year[f'{current_year}-{next_year}'] = evolution
+        
+        # Créer le DataFrame de base avec le nombre total d'hospitalisations
+        df_summary = df_nbr_hospi_filtered.groupby('nom_pathologie')['nbr_hospi'].sum().reset_index()
+        
+        # Ajouter les évolutions année par année
+        for period, evolution in evolutions_by_year.items():
+            df_summary = df_summary.merge(
+                evolution.reset_index().rename(columns={'nbr_hospi': f'Evolution_{period}'}),
+                on='nom_pathologie',
+                how='left'
+            )
+        
+        # Calculer l'évolution globale (2018-2022)
+        hospi_2018 = df_nbr_hospi_filtered[df_nbr_hospi_filtered['year'].dt.year == 2018].groupby('nom_pathologie')['nbr_hospi'].sum()
+        hospi_2022 = df_nbr_hospi_filtered[df_nbr_hospi_filtered['year'].dt.year == 2022].groupby('nom_pathologie')['nbr_hospi'].sum()
+        evolution_globale = ((hospi_2022 - hospi_2018) / hospi_2018 * 100).fillna(0)
+        
+        # Ajouter l'évolution globale au DataFrame
+        df_summary = df_summary.merge(
+            evolution_globale.reset_index().rename(columns={'nbr_hospi': 'Evolution_globale'}),
+            on='nom_pathologie',
+            how='left'
         )
         
-        st.plotly_chart(fig, use_container_width=True)
+        # Trier par évolution globale décroissante
+        df_summary = df_summary.sort_values('Evolution_globale', ascending=False)
+        
+        # Renommer les colonnes pour l'affichage
+        df_summary.columns = ['Pathologie', 'Hospitalisations'] + [f'Évol. {period} (%)' for period in evolutions_by_year.keys()] + ['Évol. 2018-2022 (%)']
+        
+        # Colonnes d'évolution pour le gradient
+        evolution_columns = ['Évol. 2018-2019 (%)', 'Évol. 2019-2020 (%)', 
+                           'Évol. 2020-2021 (%)', 'Évol. 2021-2022 (%)', 
+                           'Évol. 2018-2022 (%)']
+        
+        # Formater et afficher le tableau
+        st.dataframe(
+            df_summary.style.format({
+                'Hospitalisations': '{:,.0f}',
+                'Évol. 2018-2019 (%)': '{:+.1f}%',
+                'Évol. 2019-2020 (%)': '{:+.1f}%',
+                'Évol. 2020-2021 (%)': '{:+.1f}%',
+                'Évol. 2021-2022 (%)': '{:+.1f}%',
+                'Évol. 2018-2022 (%)': '{:+.1f}%'
+            }).background_gradient(
+                subset=evolution_columns,
+                cmap='RdYlBu_r'
+            ),
+            use_container_width=True
+        )
+        
+        st.markdown("---")
+        
+        # Deuxième tableau avec les baisses en premier
+        st.subheader("Évolution des pathologies (2018-2022) - Baisses les plus importantes")
+        
+        # Utiliser le même DataFrame mais trié dans l'ordre inverse
+        df_summary_desc = df_summary.sort_values('Évol. 2018-2022 (%)', ascending=True)
+        
+        # Afficher le deuxième tableau
+        st.dataframe(
+            df_summary_desc.style.format({
+                'Hospitalisations': '{:,.0f}',
+                'Évol. 2018-2019 (%)': '{:+.1f}%',
+                'Évol. 2019-2020 (%)': '{:+.1f}%',
+                'Évol. 2020-2021 (%)': '{:+.1f}%',
+                'Évol. 2021-2022 (%)': '{:+.1f}%',
+                'Évol. 2018-2022 (%)': '{:+.1f}%'
+            }).background_gradient(
+                subset=evolution_columns,
+                cmap='RdYlBu_r'
+            ),
+            use_container_width=True
+        )
         
     # Démographie
     with tab4:
