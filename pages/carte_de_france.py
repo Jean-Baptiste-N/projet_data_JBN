@@ -49,7 +49,7 @@ def load_data():
         # Chargement des données
         query = """
             SELECT *
-            FROM `projet-jbn-data-le-wagon.dbt_medical_analysis_join_total_morbidite.class_join_total_morbidite_population`
+            FROM `projet-jbn-data-le-wagon.dbt_medical_analysis_join_total_morbidite.class_join_total_morbidite_sexe_population`
         """
         df = client.query(query).to_dataframe()
         return df
@@ -197,7 +197,7 @@ def show_map(df_filtered, niveau_administratif, selected_service, sexe, annee):
         st_folium(m, width=1200, height=800)
     with col_help:
         st.metric(
-            label="",
+            label="help",
             value="",
             help="""Cette carte interactive vous permet de visualiser la distribution des hospitalisations en France.
             
@@ -258,7 +258,7 @@ if df is not None:
         'O': 'Obstétrique',
         'PSY': 'Psychiatrie',
         'SSR': 'Soins de suite et réadaptation',
-        'ESND': 'Établissement non défini'
+        'ESND': 'Établissement de soin longue durée'
     }
     
     selected_service = st.selectbox(
@@ -269,3 +269,6 @@ if df is not None:
 
     # Afficher la carte et les statistiques
     show_map(df_filtered, niveau_administratif, selected_service, sexe, selected_year)
+
+    st.markdown("---")
+    st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")

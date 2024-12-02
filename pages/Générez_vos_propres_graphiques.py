@@ -61,7 +61,7 @@ if df_main is not None:
         return df_age
 
     # Add Title
-    st.title("Analyse interactive")
+    st.markdown("<h1 class='main-title' style='margin-top: -70px;'>📊 Générateur de Graphiques</h1>", unsafe_allow_html=True)
 
     # Chargement progressif des données avec indicateur de progression
     with st.spinner("Chargement des données d'hospitalisation..."):
@@ -77,6 +77,9 @@ if df_main is not None:
         # Initialize PyGWalker with the loaded data
         walker = StreamlitRenderer(df_hospi, spec="./config.json", debug=False)
         walker.explorer()
+        
+        st.markdown("---")
+        st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")
     else:
         st.error("Erreur lors du chargement des données. Veuillez réessayer.")
 else:
