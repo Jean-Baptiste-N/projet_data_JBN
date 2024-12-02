@@ -615,96 +615,212 @@ if df_nbr_hospi is not None:
         st.plotly_chart(fig, use_container_width=True)
         
         # Graphique combiné (scatter plot)
-        # Fusion des données d'hospitalisation et de durée
-        combined_data = hospi_by_pathology[['nom_pathologie', 'nbr_hospi', 'AVG_duree_hospi']]
+        # Fusion des données d'hospitalisation et de durée par année
+        combined_data = pd.merge(
+            df_nbr_hospi_filtered.groupby(['nom_pathologie', 'year'])['nbr_hospi'].sum().reset_index(),
+            df_duree_hospi_filtered.groupby(['nom_pathologie', 'year'])['AVG_duree_hospi'].mean().reset_index(),
+            on=['nom_pathologie', 'year']
+        )
+        
+        # Filtrer pour garder seulement les n_pathologies plus fréquentes par année
+        top_pathologies = df_nbr_hospi_filtered.groupby('nom_pathologie')['nbr_hospi'].sum().nlargest(n_pathologies).index
+        combined_data = combined_data[combined_data['nom_pathologie'].isin(top_pathologies)]
 
-        # Création du scatter plot
+        # Création du scatter plot avec animation
         fig = px.scatter(
             combined_data,
             x='nbr_hospi',
             y='AVG_duree_hospi',
             text='nom_pathologie',
+            animation_frame=combined_data['year'].dt.year,
             title=f'Relation entre nombre d\'hospitalisations et durée moyenne de séjour',
             labels={'nbr_hospi': 'Nombre d\'hospitalisations',
                    'AVG_duree_hospi': 'Durée moyenne de séjour (jours)',
                    'nom_pathologie': 'Pathologie'},
-            size='nbr_hospi',  # Taille des points proportionnelle au nombre d'hospitalisations
-            size_max=40,  # Taille maximale des points
-            color='AVG_duree_hospi',  # Couleur basée sur la durée moyenne
-            color_continuous_scale='Viridis'  # Échelle de couleur
+            size='nbr_hospi',
+            size_max=40,
+            color='AVG_duree_hospi',
+            color_continuous_scale='Viridis',
+            range_x=[0.1, combined_data['nbr_hospi'].max() * 1.1],  # Commencer à 0 pour l'axe des hospitalisations
+            range_y=[0.5, combined_data['AVG_duree_hospi'].max() * 1.1]  # Commencer à 0 pour la durée moyenne
         )
 
         # Personnalisation du graphique
         fig.update_traces(
-            textposition='top center',  # Position du texte au-dessus des points
+            textposition='top center',
             hovertemplate="<b>%{text}</b><br>" +
                          "Hospitalisations: %{x:,.0f}<br>" +
                          "Durée moyenne: %{y:.1f} jours<br>" +
                          "<extra></extra>"
         )
 
+        # Mise à jour de la mise en page
         fig.update_layout(
             height=800,
             template='plotly_white',
             showlegend=False,
-            # Ajout d'une annotation explicative
+            margin=dict(t=100, b=100, l=100, r=150),
             annotations=[
                 dict(
-                    text="<b>Légende</b> : La taille des points représente le nombre d'hospitalisations<br>La couleur indique la durée moyenne de séjour",
+                    text="<b>Légende</b> : <br>La taille des points représente le nombre d'hospitalisations<br>La couleur indique la durée moyenne de séjour",
                     showarrow=False,
                     xref="paper", yref="paper",
-                    x=1.2, y=1.1,  # En haut (y=1) à droite (x=1)
-                    align="right",
-                    xanchor="right"  # Ancrage à droite pour éviter le débordement
+                    x=0.8, y=1.1,
+                    align="left",
+                    xanchor="left"
                 )
             ]
         )
 
-        # Ajustement des marges pour éviter la superposition des labels
-        fig.update_layout(
-            margin=dict(t=100, b=50, l=50, r=50)
-        )
+        # Configuration de l'animation
+        fig.layout.updatemenus[0].buttons[0].args[1]["frame"]["duration"] = 1500
+        fig.layout.updatemenus[0].buttons[0].args[1]["transition"]["duration"] = 500
         
         st.plotly_chart(fig, use_container_width=True)
         
         # Graphique 3D
         # Fusion des données avec les trois métriques
         combined_data_3d = pd.merge(
-            combined_data,
-            df_tranche_age_hospi_filtered.groupby('nom_pathologie')['indice_comparatif_tt_age_percent'].mean().reset_index(),
-            on='nom_pathologie',
-            how='inner'
+            df_nbr_hospi_filtered.groupby(['nom_pathologie', 'year'])['nbr_hospi'].sum().reset_index(),
+            df_duree_hospi_filtered.groupby(['nom_pathologie', 'year'])['AVG_duree_hospi'].mean().reset_index(),
+            on=['nom_pathologie', 'year']
+        )
+        combined_data_3d = pd.merge(
+            combined_data_3d,
+            df_tranche_age_hospi_filtered.groupby(['nom_pathologie', 'year'])['indice_comparatif_tt_age_percent'].mean().reset_index(),
+            on=['nom_pathologie', 'year']
         )
 
-        # Création du graphique 3D
-        fig = go.Figure(data=[go.Scatter3d(
-            x=combined_data_3d['nbr_hospi'],
-            y=combined_data_3d['AVG_duree_hospi'],
-            z=combined_data_3d['indice_comparatif_tt_age_percent'],
-            mode='markers+text',
-            text=combined_data_3d['nom_pathologie'],
-            textposition='top center',
-            marker=dict(
-                size=combined_data_3d['nbr_hospi'] / combined_data_3d['nbr_hospi'].max() * 30,  # Taille normalisée
-                color=combined_data_3d['AVG_duree_hospi'],
-                colorscale='Viridis',
-                opacity=0.8,
-                colorbar=dict(title="Durée moyenne de séjour (jours)")
-            ),
-            hovertemplate="<b>%{text}</b><br>" +
-                         "Hospitalisations: %{x:,.0f}<br>" +
-                         "Durée moyenne: %{y:.1f} jours<br>" +
-                         "Indice comparatif: %{z:.1f}%<br>" +
-                         "<extra></extra>"
-        )])
+        # Filtrer pour garder seulement les n_pathologies plus fréquentes
+        top_pathologies = df_nbr_hospi_filtered.groupby('nom_pathologie')['nbr_hospi'].sum().nlargest(n_pathologies).index
+        combined_data_3d = combined_data_3d[combined_data_3d['nom_pathologie'].isin(top_pathologies)]
 
+        # Création du graphique 3D avec animation
+        fig = go.Figure()
+
+        # Créer les frames pour l'animation avec interpolation
+        frames = []
+        years = sorted(combined_data_3d['year'].dt.year.unique())
+        
+        for i in range(len(years)):
+            current_year = years[i]
+            current_data = combined_data_3d[combined_data_3d['year'].dt.year == current_year].copy()
+            
+            # Nettoyer les valeurs NA
+            current_data = current_data.dropna(subset=['nbr_hospi', 'AVG_duree_hospi', 'indice_comparatif_tt_age_percent'])
+            
+            # Ajouter la frame pour l'année actuelle
+            frame = go.Frame(
+                data=[go.Scatter3d(
+                    x=current_data['nbr_hospi'].tolist(),
+                    y=current_data['AVG_duree_hospi'].tolist(),
+                    z=current_data['indice_comparatif_tt_age_percent'].tolist(),
+                    mode='markers+text',
+                    text=current_data['nom_pathologie'].tolist(),
+                    textposition='top center',
+                    marker=dict(
+                        size=[x/current_data['nbr_hospi'].max()*30 for x in current_data['nbr_hospi']],
+                        color=current_data['AVG_duree_hospi'].tolist(),
+                        colorscale='Viridis',
+                        opacity=0.8,
+                        colorbar=dict(title="Durée moyenne de séjour (jours)")
+                    ),
+                    hovertemplate="<b>%{text}</b><br>" +
+                                 f"Année: {current_year}<br>" +
+                                 "Hospitalisations: %{x:,.0f}<br>" +
+                                 "Durée moyenne: %{y:.1f} jours<br>" +
+                                 "Indice comparatif: %{z:.1f}%<br>" +
+                                 "<extra></extra>"
+                )],
+                name=str(current_year)
+            )
+            frames.append(frame)
+            
+            # Créer des frames intermédiaires si ce n'est pas la dernière année
+            if i < len(years) - 1:
+                next_year = years[i + 1]
+                next_data = combined_data_3d[combined_data_3d['year'].dt.year == next_year].copy()
+                next_data = next_data.dropna(subset=['nbr_hospi', 'AVG_duree_hospi', 'indice_comparatif_tt_age_percent'])
+                
+                # S'assurer que les données sont alignées
+                common_pathologies = sorted(list(set(current_data['nom_pathologie']) & set(next_data['nom_pathologie'])))
+                current_data = current_data[current_data['nom_pathologie'].isin(common_pathologies)].sort_values('nom_pathologie')
+                next_data = next_data[next_data['nom_pathologie'].isin(common_pathologies)].sort_values('nom_pathologie')
+                
+                # Créer 5 frames intermédiaires entre chaque année
+                for step in range(1, 6):
+                    # Interpolation linéaire entre les années
+                    alpha = step / 6.0
+                    
+                    # Calculer les valeurs interpolées
+                    nbr_hospi = (current_data['nbr_hospi'].values * (1-alpha) + next_data['nbr_hospi'].values * alpha).tolist()
+                    avg_duree = (current_data['AVG_duree_hospi'].values * (1-alpha) + next_data['AVG_duree_hospi'].values * alpha).tolist()
+                    indice = (current_data['indice_comparatif_tt_age_percent'].values * (1-alpha) + next_data['indice_comparatif_tt_age_percent'].values * alpha).tolist()
+                    
+                    # Calculer la taille des points
+                    max_hospi = max(nbr_hospi) if nbr_hospi else 1  # Éviter la division par zéro
+                    point_sizes = [x/max_hospi*30 for x in nbr_hospi]
+                    
+                    frame = go.Frame(
+                        data=[go.Scatter3d(
+                            x=nbr_hospi,
+                            y=avg_duree,
+                            z=indice,
+                            mode='markers+text',
+                            text=current_data['nom_pathologie'].tolist(),
+                            textposition='top center',
+                            marker=dict(
+                                size=point_sizes,
+                                color=avg_duree,
+                                colorscale='Viridis',
+                                opacity=0.8,
+                                colorbar=dict(title="Durée moyenne de séjour (jours)")
+                            ),
+                            hovertemplate="<b>%{text}</b><br>" +
+                                         f"Transition {current_year}-{next_year}<br>" +
+                                         "Hospitalisations: %{x:,.0f}<br>" +
+                                         "Durée moyenne: %{y:.1f} jours<br>" +
+                                         "Indice comparatif: %{z:.1f}%<br>" +
+                                         "<extra></extra>"
+                        )],
+                        name=f"{current_year}_{step}"
+                    )
+                    frames.append(frame)
+            
+            # Ajouter la première année comme trace initiale
+            if current_year == years[0]:
+                fig.add_trace(frame.data[0])
+
+        fig.frames = frames
+
+        # Mise à jour des steps pour inclure uniquement les années principales
+        steps = []
+        for year in years:
+            step = dict(
+                method="animate",
+                args=[[str(year)], {
+                    "frame": {"duration": 300, "redraw": True},
+                    "mode": "immediate",
+                    "transition": {"duration": 300}
+                }],
+                label=str(year)
+            )
+            steps.append(step)
+
+        sliders = [dict(
+            active=0,
+            currentvalue={"prefix": "Année: "},
+            pad={"t": 50},
+            steps=steps
+        )]
+        
         # Mise en page du graphique 3D
         fig.update_layout(
-            title="Visualisation 3D des pathologies",
+            title='Distribution des pathologies',
             scene=dict(
-                xaxis_title="Nombre d'hospitalisations",
-                yaxis_title="Durée moyenne de séjour (jours)",
-                zaxis_title="Indice comparatif (%)",
+                xaxis_title='Nombre d\'hospitalisations',
+                yaxis_title='Durée moyenne de séjour (jours)',
+                zaxis_title='Indice comparatif (%)',
                 camera=dict(
                     up=dict(x=0, y=0, z=1),
                     center=dict(x=0, y=0, z=0),
@@ -713,16 +829,52 @@ if df_nbr_hospi is not None:
             ),
             height=800,
             template='plotly_white',
-            margin=dict(t=100, b=50, l=50, r=50)
+            showlegend=True,
+            legend=dict(
+                yanchor="top",
+                y=0.99,
+                xanchor="right",
+                x=0.99
+            ),
+            width=800,
+            sliders=sliders,
+            updatemenus=[{
+                "buttons": [
+                    {
+                        "args": [None, {
+                            "frame": {"duration": 300, "redraw": True},
+                            "fromcurrent": True,
+                            "transition": {"duration": 300},
+                            "mode": "immediate"
+                        }],
+                        "label": "Lecture",
+                        "method": "animate"
+                    },
+                    {
+                        "args": [[None], {
+                            "frame": {"duration": 0, "redraw": True},
+                            "mode": "immediate",
+                            "transition": {"duration": 0}
+                        }],
+                        "label": "Pause",
+                        "method": "animate"
+                    }
+                ],
+                "direction": "left",
+                "pad": {"r": 10, "t": 87},
+                "showactive": False,
+                "type": "buttons",
+                "x": 0.0,
+                "xanchor": "right",
+                "y": 0,
+                "yanchor": "top"
+            }]
         )
 
-        # Ajout d'une annotation explicative
-        fig.add_annotation(
-            text="<b>Légende</b> : <br>La taille des points représente le nombre d'hospitalisations<br>La couleur indique la durée moyenne de séjour",
-            xref="paper", yref="paper",
-            x=1, y=1.1,
-            showarrow=False,
-            align="left"
+        # Ajout de configuration pour une animation plus fluide
+        fig.update_traces(
+            hoverinfo="none",  # Désactiver temporairement le hover pendant l'animation
+            customdata=combined_data_3d[['nom_pathologie', 'nbr_hospi', 'AVG_duree_hospi', 'indice_comparatif_tt_age_percent']].values,
         )
         
         st.plotly_chart(fig, use_container_width=True)
