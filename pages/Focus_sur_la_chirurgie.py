@@ -38,7 +38,7 @@ st.markdown ("""
 
 
 # Titre principal
-st.markdown ("<h1 class='main-title'>🏥 Focus sur la Chirurgie</h1>", unsafe_allow_html=True)
+st.markdown ("<h1 class='main-title' style='margin-top: -70px; margin-bottom: -8000px;'>🏥 Focus sur la Chirurgie</h1>", unsafe_allow_html=True)
 
 
 # Fonction de chargement des données
@@ -109,7 +109,7 @@ if df is not None:
 
     # Affichage des métriques clés
     st.subheader("Statistiques clés")
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col_help = st.columns([1, 1, 1, 0.01])
     
     with col1:
         total_hospi = df_filtered['nbr_hospi'].sum()
@@ -122,7 +122,18 @@ if df is not None:
     with col3:
         evolution = df_filtered['evolution_percent_nbr_hospi'].mean()
         st.metric("Évolution moyenne", f"{evolution:+.1f}%")
-        
+
+    with col_help:
+        st.metric(
+            label="help",
+            value="",
+            help="""📊 Ces métriques clés résument les données chirurgicales :
+            
+            - Total des hospitalisations : nombre total d'interventions chirurgicales
+            - Durée moyenne : temps moyen d'hospitalisation post-chirurgie
+            - Évolution : tendance des interventions par rapport à la période précédente"""
+        )
+    
     # Préparation des données pour le graphique 3D
     group_cols = ['annee']
     location_label = 'Région' if niveau_administratif == "Régions" else 'Département'
@@ -176,7 +187,27 @@ if df is not None:
     )
 
     # Affichage du graphique
-    st.plotly_chart(fig_3d, use_container_width=True)
+    col_chart, col_help = st.columns([1, 0.01])
+    with col_chart:
+        st.plotly_chart(fig_3d, use_container_width=True)
+    with col_help:
+        st.metric(
+            label="help",
+            value="",
+            help="""🔍 Ce graphique 3D visualise l'évolution des interventions chirurgicales :
+            
+            Navigation :
+            - Utilisez la souris pour faire pivoter le graphique
+            - Double-cliquez pour réinitialiser la vue
+            - Survolez les points pour voir les détails
+            
+            Axes :
+            - X : Année
+            - Y : Région/Département
+            - Z : Nombre d'interventions (échelle logarithmique)
+            
+            Les couleurs différentes représentent les différentes régions/départements."""
+        )
 
 else:
     st.error("Impossible de charger les données. Veuillez réessayer plus tard.")

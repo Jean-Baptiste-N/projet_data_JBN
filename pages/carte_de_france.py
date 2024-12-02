@@ -36,7 +36,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Titre principal
-st.markdown("<h1 class='main-title'>🌍 Carte de France des hospitalisations</h1>", unsafe_allow_html=True)
+st.markdown("<h1 class='main-title' style='margin-top: -70px; margin-bottom: -8000px;'>🌍 Carte de France des hospitalisations</h1>", unsafe_allow_html=True)
 
 # Fonction de chargement des données
 @st.cache_resource
@@ -192,7 +192,27 @@ def show_map(df_filtered, niveau_administratif, selected_service, sexe, annee):
     m = generate_map(map_data, geojson_data, niveau_administratif, filtered_df, sexe, annee, selected_service)
     
     # Afficher la carte
-    st_folium(m, width=1200, height=800)
+    col_chart, col_help = st.columns([1, 0.01])
+    with col_chart:
+        st_folium(m, width=1200, height=800)
+    with col_help:
+        st.metric(
+            label="",
+            value="",
+            help="""Cette carte interactive vous permet de visualiser la distribution des hospitalisations en France.
+            
+            🔍 Navigation :
+            - Zoomez avec la molette de la souris
+            - Cliquez et faites glisser pour vous déplacer
+            - Survolez une région pour voir les détails
+            
+            📊 Informations affichées :
+            - Nombre total d'hospitalisations
+            - Durée moyenne de séjour
+            - Top pathologies par territoire
+            
+            🎨 Les couleurs plus foncées indiquent un nombre plus élevé d'hospitalisations."""
+        )
 
 # Chargement des données
 df = load_data()

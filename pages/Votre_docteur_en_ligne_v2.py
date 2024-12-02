@@ -11,8 +11,36 @@ from sqlalchemy.engine import create_engine
 from sqlalchemy_bigquery import BigQueryDialect
 import time
 
+MAIN_COLOR = "#FF4B4B"
+
+# Style CSS personnalisé
+st.markdown("""
+    <style>
+    .main-title {
+        color: #003366;
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    .section-title {
+        color: #003366;
+        font-size: 1.8rem;
+        font-weight: bold;
+        margin: 1.5rem 0;
+    }
+    .card {
+        padding: 1rem;
+        border-radius: 10px;
+        background-color: #f8f9fa;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # Titre de la page
-st.title("Votre Docteur en Ligne V2 - Assistant SQL")
+st.markdown("<h1 class='main-title' style='margin-top: -65px; margin-bottom: -8000px;'>Votre Docteur en Ligne V2 - Assistant SQL</h1>", unsafe_allow_html=True)
 
 try:
     # Configuration Azure OpenAI

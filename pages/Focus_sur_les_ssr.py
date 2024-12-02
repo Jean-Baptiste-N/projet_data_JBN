@@ -38,7 +38,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Titre principal
-st.markdown("<h1 class='main-title'>🏥 Focus sur les SSR</h1>", unsafe_allow_html=True)
+st.markdown("<h1 class='main-title' style='margin-top: -70px; margin-bottom: -8000px;'>🏥 Focus sur les SSR</h1>", unsafe_allow_html=True)
 
 # Fonction de chargement des données
 @st.cache_resource
@@ -106,7 +106,7 @@ if df is not None:
 
     # Affichage des métriques clés
     st.subheader("Statistiques clés")
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col_help = st.columns([1, 1, 1, 0.01])
     
     with col1:
         total_hospi = df_filtered['nbr_hospi'].sum()
@@ -120,6 +120,19 @@ if df is not None:
         evolution = df_filtered['evolution_percent_nbr_hospi'].mean()
         st.metric("Évolution moyenne", f"{evolution:+.1f}%")
 
+    with col_help:
+        st.metric(
+            label="",
+            value="",
+            help="""📊 Ces métriques clés résument les données SSR (Soins de Suite et de Réadaptation) :
+            
+            - Total des hospitalisations : nombre total de patients en SSR
+            - Durée moyenne : temps moyen de séjour en SSR
+            - Évolution : tendance des admissions par rapport à la période précédente
+            
+            Note : Les SSR sont des services spécialisés dans la rééducation et la réadaptation, avec des durées de séjour généralement plus longues."""
+        )
+
     # Graphiques spécifiques aux SSR
     st.subheader("Analyse détaillée")
     
@@ -128,15 +141,33 @@ if df is not None:
     age_data = df_filtered[age_columns].sum()
     age_data.index = [col.replace('tranche_age_', '') for col in age_data.index]
     
-    fig = px.bar(
-        x=age_data.index,
-        y=age_data.values,
-        title="Distribution par tranche d'âge",
-        labels={'x': "Tranche d'âge", 'y': "Nombre d'hospitalisations"}
-    )
-    fig.update_traces(marker_color=MAIN_COLOR)
-    fig.update_layout(template='plotly_white')
-    st.plotly_chart(fig, use_container_width=True)
+    col_chart, col_help = st.columns([1, 0.01])
+    with col_chart:
+        fig = px.bar(
+            x=age_data.index,
+            y=age_data.values,
+            title="Distribution par tranche d'âge",
+            labels={'x': "Tranche d'âge", 'y': "Nombre d'hospitalisations"}
+        )
+        fig.update_traces(marker_color=MAIN_COLOR)
+        fig.update_layout(template='plotly_white')
+        st.plotly_chart(fig, use_container_width=True)
+    
+    with col_help:
+        st.metric(
+            label="",
+            value="",
+            help="""📈 Distribution par âge en SSR :
+            
+            Ce graphique montre la répartition des patients par tranche d'âge dans les services SSR.
+            
+            Interprétation :
+            - L'axe horizontal montre les tranches d'âge
+            - L'axe vertical indique le nombre d'hospitalisations
+            - La hauteur des barres représente le volume de patients
+            
+            Note : Les SSR accueillent souvent une population plus âgée nécessitant une rééducation post-opératoire ou un suivi prolongé."""
+        )
 
 else:
     st.error("Impossible de charger les données. Veuillez réessayer plus tard.")

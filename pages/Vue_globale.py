@@ -192,7 +192,7 @@ def load_with_progress():
 df_nbr_hospi, df_duree_hospi, df_tranche_age_hospi, df_capacite_hospi, df_complet, main_metrics = load_with_progress()
 
 # Titre principal avec style amélioré
-st.markdown("<h1 class='main-title'>🏥 Analyse hospitalière en France (2018-2022)</h1>", unsafe_allow_html=True)
+st.markdown("<h1 class='main-title' style='margin-top: -70px; margin-bottom: -8000px;'>🏥 Analyse hospitalière en France (2018-2022)</h1>", unsafe_allow_html=True)
 
 # Suite du code uniquement si les données sont chargées correctement
 if df_nbr_hospi is not None:
@@ -392,9 +392,7 @@ if df_nbr_hospi is not None:
                 help="Nombre de lits perdus entre 2018 et 2022 et pourcentage de diminution"
             )
 
-        # Tendances temporelles avec tooltips améliorés
-        col1, col2 = st.columns(2)
-        
+
         # Préparation des données
         hospi_by_year = df_nbr_hospi.groupby('year')['nbr_hospi'].sum().reset_index()
         duree_by_year = df_duree_hospi.groupby('year')['AVG_duree_hospi'].mean().reset_index()
@@ -464,7 +462,11 @@ if df_nbr_hospi is not None:
         )
 
         # Affichage du graphique
-        st.plotly_chart(fig, use_container_width=True)
+        col_chart, col_help = st.columns([1, 0.01])
+        with col_chart:
+            st.plotly_chart(fig, use_container_width=True)
+        with col_help:
+            st.metric(label="", value="", help="Ce graphique combine le nombre total d'hospitalisations (barres bleues) et la durée moyenne de séjour (ligne verte) par année. Passez votre souris sur les éléments du graphique pour voir les détails.")
         
     # Analyse Géographique
     with tab2:
@@ -497,7 +499,11 @@ if df_nbr_hospi is not None:
                 marker_color=MAIN_COLOR
             )
             fig.update_layout(height=600, template='plotly_white')
-            st.plotly_chart(fig, use_container_width=True)
+            col_chart, col_help = st.columns([1, 0.01])
+            with col_chart:
+                st.plotly_chart(fig, use_container_width=True)
+            with col_help:
+                st.metric(label="", value="", help=f"Ce graphique montre le nombre total d'hospitalisations par {territory_label}. Les barres sont triées par ordre croissant.")
         
         with col2:
             duree_by_territory = df_duree_hospi_filtered.groupby(territory_col)['AVG_duree_hospi'].mean().reset_index()
@@ -515,7 +521,11 @@ if df_nbr_hospi is not None:
                 marker_color=MAIN_COLOR
             )
             fig.update_layout(height=600, template='plotly_white')
-            st.plotly_chart(fig, use_container_width=True)
+            col_chart, col_help = st.columns([1, 0.01])
+            with col_chart:
+                st.plotly_chart(fig, use_container_width=True)
+            with col_help:
+                st.metric(label="", value="", help=f"Ce graphique présente la durée moyenne des séjours hospitaliers par {territory_label}. Les barres sont triées par ordre croissant.")
 
     # Pathologies
     with tab3:
@@ -612,8 +622,12 @@ if df_nbr_hospi is not None:
         fig.update_yaxes(title_text="Nombre d'hospitalisations", secondary_y=False)
         fig.update_yaxes(title_text="Durée moyenne de séjour (jours)", secondary_y=True)
 
-        st.plotly_chart(fig, use_container_width=True)
-        
+        col_chart, col_help = st.columns([1, 0.01])
+        with col_chart:
+            st.plotly_chart(fig, use_container_width=True)
+        with col_help:
+            st.metric(label="", value="", help="Ce graphique montre la relation entre le nombre d'hospitalisations (barres) et la durée moyenne de séjour (ligne) pour les pathologies les plus fréquentes.")
+
         # Graphique combiné (scatter plot)
         # Fusion des données d'hospitalisation et de durée par année
         combined_data = pd.merge(
@@ -676,8 +690,12 @@ if df_nbr_hospi is not None:
         fig.layout.updatemenus[0].buttons[0].args[1]["frame"]["duration"] = 1500
         fig.layout.updatemenus[0].buttons[0].args[1]["transition"]["duration"] = 500
         
-        st.plotly_chart(fig, use_container_width=True)
-        
+        col_chart, col_help = st.columns([1, 0.01])
+        with col_chart:
+            st.plotly_chart(fig, use_container_width=True)
+        with col_help:
+            st.metric(label="", value="", help="Ce graphique animé montre l'évolution de la relation entre le nombre d'hospitalisations et la durée moyenne de séjour pour chaque pathologie au fil des années. La taille des bulles représente le nombre d'hospitalisations.")
+
         # Graphique 3D
         # Fusion des données avec les trois métriques
         combined_data_3d = pd.merge(
@@ -899,7 +917,11 @@ if df_nbr_hospi is not None:
         )
 
         # Affichage du graphique
-        st.plotly_chart(fig, use_container_width=True)
+        col_chart, col_help = st.columns([1, 0.01])
+        with col_chart:
+            st.plotly_chart(fig, use_container_width=True)
+        with col_help:
+            st.metric(label="", value="", help="Ce graphique 3D montre la distribution des hospitalisations par pathologie, durée moyenne de séjour et indice comparatif. Utilisez les contrôles pour faire pivoter et zoomer sur le graphique.")
 
         # Tableau récapitulatif détaillé
         st.subheader("Évolution des pathologies (2018-2022)")
@@ -1055,7 +1077,11 @@ if df_nbr_hospi is not None:
                 marker_color=MAIN_COLOR
             )
             fig.update_layout(height=500, template='plotly_white')
-            st.plotly_chart(fig, use_container_width=True)
+            col_chart, col_help = st.columns([1, 0.01])
+            with col_chart:
+                st.plotly_chart(fig, use_container_width=True)
+            with col_help:
+                st.metric(label="", value="", help="Ce graphique montre la distribution des hospitalisations par tranche d'âge. Les barres représentent le taux d'hospitalisation pour chaque groupe d'âge.")
         
         with col2:
             st.subheader(" Évolution des taux")
@@ -1094,8 +1120,12 @@ if df_nbr_hospi is not None:
                 hovermode='x unified',
                 template='plotly_white'
             )
-            st.plotly_chart(fig, use_container_width=True)
-        
+            col_chart, col_help = st.columns([1, 0.01])
+            with col_chart:
+                st.plotly_chart(fig, use_container_width=True)
+            with col_help:
+                st.metric(label="", value="", help="Ce graphique montre l'évolution des taux d'hospitalisation au fil du temps. Il permet de comparer les tendances entre différentes régions ou services.")
+
         # Analyse régionale par tranche d'âge
         st.subheader(" Analyse territoriale par tranche d'âge")
         
@@ -1126,8 +1156,12 @@ if df_nbr_hospi is not None:
             marker_color=MAIN_COLOR
         )
         fig.update_layout(height=500, template='plotly_white')
-        st.plotly_chart(fig, use_container_width=True)
-        
+        col_chart, col_help = st.columns([1, 0.01])
+        with col_chart:
+            st.plotly_chart(fig, use_container_width=True)
+        with col_help:
+            st.metric(label="", value="", help="Ce graphique montre la distribution des hospitalisations par tranche d'âge pour le territoire sélectionné.")
+
         # Affichage des indicateurs clés
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -1248,8 +1282,12 @@ if df_nbr_hospi is not None:
         )
         fig_pie.update_traces(textposition='inside', textinfo='percent+label')
         fig_pie.update_layout(template='plotly_white')
-        st.plotly_chart(fig_pie, use_container_width=True)
-        
+        col_chart, col_help = st.columns([1, 0.01])
+        with col_chart:
+            st.plotly_chart(fig_pie, use_container_width=True)
+        with col_help:
+            st.metric(label="", value="", help=f"Ce graphique circulaire montre la répartition des hospitalisations entre les différents services médicaux pour l'année {selected_year}.")
+
         # Évolution temporelle par service
         df_evolution = df_service.groupby(['annee', 'classification'])['nbr_hospi'].sum().reset_index()
         
@@ -1262,8 +1300,12 @@ if df_nbr_hospi is not None:
             labels={'annee': 'Année', 'nbr_hospi': 'Nombre d\'hospitalisations', 'classification': 'Service'}
         )
         fig_evolution.update_layout(template='plotly_white')
-        st.plotly_chart(fig_evolution, use_container_width=True)
-        
+        col_chart, col_help = st.columns([1, 0.01])
+        with col_chart:
+            st.plotly_chart(fig_evolution, use_container_width=True)
+        with col_help:
+            st.metric(label="", value="", help="Ce graphique montre l'évolution du nombre d'hospitalisations pour chaque service médical au fil du temps.")
+
         # Heatmap des services par tranche d'âge
         age_columns = [col for col in df_service.columns if col.startswith('tranche_age_')]
         
@@ -1286,10 +1328,14 @@ if df_nbr_hospi is not None:
             z='pourcentage',
             title='Distribution des tranches d\'âge par service médical',
             labels={'tranche_age': 'Tranche d\'âge', 'classification': 'Service', 'pourcentage': 'Pourcentage'},
-            color_continuous_scale='Viridis'
+            color_continuous_scale='redor'
         )
         fig_heatmap.update_layout(xaxis_tickangle=-45, template='plotly_white')
-        st.plotly_chart(fig_heatmap, use_container_width=True)
+        col_chart, col_help = st.columns([1, 0.01])
+        with col_chart:
+            st.plotly_chart(fig_heatmap, use_container_width=True)
+        with col_help:
+            st.metric(label="", value="", help="Cette heatmap montre la distribution des tranches d'âge pour chaque service médical. Les couleurs plus foncées indiquent une plus forte concentration.")
 
         # Création d'une visualisation 3D plus pertinente
         st.subheader("Évolution des services médicaux dans le temps")
@@ -1347,8 +1393,12 @@ if df_nbr_hospi is not None:
         )
 
         # Affichage du graphique
-        st.plotly_chart(fig_3d, use_container_width=True)
-
+        col_chart, col_help = st.columns([1, 0.01])
+        with col_chart:
+            st.plotly_chart(fig_3d, use_container_width=True)
+        with col_help:
+            st.metric(label="", value="", help="Ce graphique 3D montre la distribution des hospitalisations par service, année et région. Utilisez les contrôles pour faire pivoter et zoomer sur le graphique.")
+        
         # Tableau récapitulatif simplifié
         st.subheader("Résumé par service médical")
         df_summary = df_service_filtered.groupby('classification').agg({

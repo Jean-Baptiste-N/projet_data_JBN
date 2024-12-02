@@ -38,7 +38,7 @@ st.markdown ("""
 """, unsafe_allow_html=True)
 
 # Titre principal
-st.markdown ("<h1 class='main-title'>🏥 Focus sur la Psychiatrie</h1>", unsafe_allow_html=True)
+st.markdown ("<h1 class='main-title' style='margin-top: -70px; margin-bottom: -8000px;'>🏥 Focus sur la Psychiatrie</h1>", unsafe_allow_html=True)
 
 # Fonction de chargement des données
 @st.cache_resource
@@ -106,7 +106,7 @@ if df is not None:
 
     # Affichage des métriques clés
     st.subheader("Statistiques clés")
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col_help = st.columns([1, 1, 1, 0.01])
     
     with col1:
         total_hospi = df_filtered['nbr_hospi'].sum()
@@ -119,6 +119,19 @@ if df is not None:
     with col3:
         evolution = df_filtered['evolution_percent_nbr_hospi'].mean()
         st.metric("Évolution moyenne", f"{evolution:+.1f}%")
+
+    with col_help:
+        st.metric(
+            label="",
+            value="",
+            help="""📊 Ces métriques clés résument les données psychiatriques :
+            
+            - Total des hospitalisations : nombre total d'hospitalisations en psychiatrie
+            - Durée moyenne : temps moyen de séjour en service psychiatrique
+            - Évolution : tendance des hospitalisations psychiatriques par rapport à la période précédente
+            
+            Note : Les durées de séjour en psychiatrie sont généralement plus longues que dans les autres services."""
+        )
 
 else:
     st.error("Impossible de charger les données. Veuillez réessayer plus tard.")
