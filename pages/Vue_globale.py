@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 from google.cloud import bigquery
 from streamlit_extras.metric_cards import style_metric_cards 
 import time
@@ -193,22 +194,6 @@ df_nbr_hospi, df_duree_hospi, df_tranche_age_hospi, df_capacite_hospi, df_comple
 # Titre principal avec style amélioré
 st.markdown("<h1 class='main-title'>🏥 Analyse hospitalière en France (2018-2022)</h1>", unsafe_allow_html=True)
 
-# Introduction explicative
-st.markdown("""
-    <div class="insight-card">
-    <h3>📊 Vue d'ensemble</h3>
-    <p>Cette analyse présente un panorama complet du système hospitalier français sur 5 ans, 
-    couvrant les aspects suivants :</p>
-    <ul>
-        <li>Évolution des capacités hospitalières</li>
-        <li>Distribution géographique des établissements</li>
-        <li>Analyse des pathologies principales</li>
-        <li>Tendances démographiques</li>
-        <li>Performance des services médicaux</li>
-    </ul>
-    </div>
-""", unsafe_allow_html=True)
-
 # Suite du code uniquement si les données sont chargées correctement
 if df_nbr_hospi is not None:
     # Filtres dans une card dédiée
@@ -307,7 +292,6 @@ if df_nbr_hospi is not None:
         st.subheader("Nombre d'hospitalisations par année")
         
         # Affichage des métriques dans des cartes stylisées
-        st.markdown("<div class='metric-container'>", unsafe_allow_html=True)
         col1, col2, col3, col4, col5 = st.columns(5)
         
         with col1:
@@ -357,7 +341,7 @@ if df_nbr_hospi is not None:
                 help="Évolution du nombre total d'hospitalisations entre 2018 et 2022"
             )
         st.markdown("</div>", unsafe_allow_html=True)
-        style_metric_cards(background_color="#F0F2F6",border_left_color= "#007BFF")
+        style_metric_cards(background_color="#F0F2F6",border_left_color= MAIN_COLOR)
         # Affichage des lits disponibles
         st.subheader("Nombre de lits disponibles par années")
         col1, col2, col3, col4, col5 = st.columns(5)
@@ -367,7 +351,7 @@ if df_nbr_hospi is not None:
             delta_2019_lits = ((value_2019_lits - value_2018_lits) / value_2018_lits) * 100
             st.metric(
                 label="2019",
-                value=f"{value_2019_lits / 1_000_000:.2f}M",
+                value=f"{value_2019_lits / 1_000:.2f}K",
                 delta=f"{delta_2019_lits:.2f}% vs 2018",
                 help="Nombre total de lits disponibles en 2019 et variation par rapport à 2018"
             )
@@ -376,7 +360,7 @@ if df_nbr_hospi is not None:
             delta_2020_lits = ((value_2020_lits - value_2019_lits) / value_2019_lits) * 100
             st.metric(
                 label="2020",
-                value=f"{value_2020_lits / 1_000_000:.2f}M",
+                value=f"{value_2020_lits / 1_000:.2f}K",
                 delta=f"{delta_2020_lits:.2f}% vs 2019",
                 help="Nombre total de lits disponibles en 2020 et variation par rapport à 2019"
             )
@@ -385,16 +369,16 @@ if df_nbr_hospi is not None:
             delta_2021_lits = ((value_2021_lits - value_2020_lits) / value_2020_lits) * 100
             st.metric(
                 label="2021",
-                value=f"{value_2021_lits / 1_000_000:.2f}M",
+                value=f"{value_2021_lits / 1_000:.2f}K",
                 delta=f"{delta_2021_lits:.2f}% vs 2020",
-                help="Nombre total de lits disponibles en 2021 et variation par rapport à 2020"
+                help="NoKbre total de lits disponibles en 2021 et variation par rapport à 2020"
             )
         with col4:
             value_2022_lits = main_metrics["lits_2022"]
             delta_2022_lits = ((value_2022_lits - value_2021_lits) / value_2021_lits) * 100
             st.metric(
                 label="2022",
-                value=f"{value_2022_lits / 1_000_000:.2f}M",
+                value=f"{value_2022_lits / 1_000:.2f}K",
                 delta=f"{delta_2022_lits:.2f}% vs 2021",
                 help="Nombre total de lits disponibles en 2022 et variation par rapport à 2021"
             )
@@ -535,23 +519,20 @@ if df_nbr_hospi is not None:
 
     # Pathologies
     with tab3:
-        st.markdown("""
-            <div class="insight-card">
-            <h3>🏥 Analyse des pathologies</h3>
-            <p>Découvrez les principales pathologies traitées dans les établissements français.
-            Comparez leur fréquence et leur évolution dans le temps.</p>
-            </div>
-        """, unsafe_allow_html=True)
         
-        # Ajout d'un champ de recherche pour les pathologies
+        # Système de recherche avec autocomplétion
         all_pathologies = sorted(df_nbr_hospi_filtered['nom_pathologie'].unique())
-        search_term = st.text_input(" Rechercher une pathologie", "")
+        search_term = st.text_input("🔍 Rechercher une pathologie spécifique pour obtenir des détails sur celle-ci", "")
         
-        # Filtrer les pathologies en fonction de la recherche
+        # Filtrer et suggérer les pathologies pendant la saisie
         if search_term:
             filtered_pathologies = [path for path in all_pathologies if search_term.lower() in path.lower()]
             if filtered_pathologies:
-                selected_pathology = st.selectbox("Sélectionner une pathologie", filtered_pathologies)
+                selected_pathology = st.selectbox(
+                    "Sélectionner une pathologie dans les suggestions",
+                    filtered_pathologies,
+                    key="pathology_selector"
+                )
                 
                 # Afficher les données pour la pathologie sélectionnée
                 path_data = df_nbr_hospi_filtered[df_nbr_hospi_filtered['nom_pathologie'] == selected_pathology]
@@ -569,69 +550,183 @@ if df_nbr_hospi is not None:
         st.divider()
         
         # Ajout d'un sélecteur pour filtrer le nombre de pathologies à afficher
-        n_pathologies = st.slider("Nombre de pathologies à afficher", 5, 50, 20)
+        n_pathologies = st.slider("Nombre de pathologies à afficher", 5, 159, 20)
         
         # Top pathologies par nombre d'hospitalisations
         hospi_by_pathology = df_nbr_hospi_filtered.groupby('nom_pathologie')['nbr_hospi'].sum().reset_index()
-        hospi_by_pathology = hospi_by_pathology.sort_values(by='nbr_hospi', ascending=True).tail(n_pathologies)
+        hospi_by_pathology = hospi_by_pathology.sort_values(by='nbr_hospi', ascending=False).head(n_pathologies)
         
-        fig = px.bar(hospi_by_pathology, x='nbr_hospi', y='nom_pathologie',
-                    title=f'Top {n_pathologies} Pathologies par nombre d\'hospitalisations',
-                    labels={'nbr_hospi': 'Nombre d\'hospitalisations',
-                           'nom_pathologie': 'Pathologie'},
-                    custom_data=['nom_pathologie', 'nbr_hospi'],
-                    orientation='h')
-        fig.update_traces(
-            hovertemplate="<b>Pathologie:</b> %{customdata[0]}<br>" +
-                         "<b>Hospitalisations:</b> %{customdata[1]:,.0f}<br><extra></extra>",
-            marker_color=MAIN_COLOR
-        )
-        fig.update_layout(height=800, template='plotly_white')
-        st.plotly_chart(fig, use_container_width=True)
-        
+        # Ajout des données de durée moyenne
+        duree_data = df_duree_hospi_filtered.groupby('nom_pathologie')['AVG_duree_hospi'].mean().reset_index()
+        hospi_by_pathology = pd.merge(hospi_by_pathology, duree_data, on='nom_pathologie', how='left')
 
-        # Top pathologies par durée moyenne
-        duree_by_pathology = df_duree_hospi_filtered.groupby(['nom_pathologie'])['AVG_duree_hospi'].mean().reset_index()
-        duree_by_pathology = duree_by_pathology.sort_values(by='AVG_duree_hospi', ascending=True).tail(n_pathologies)
-        
-        fig = px.bar(duree_by_pathology, x='AVG_duree_hospi', y='nom_pathologie',
-                    title=f'Top {n_pathologies} Pathologies par durée moyenne de séjour',
-                    labels={'AVG_duree_hospi': 'Durée moyenne (jours)',
-                           'nom_pathologie': 'Pathologie'},
-                    custom_data=['nom_pathologie', 'AVG_duree_hospi'],
-                    orientation='h')
-        fig.update_traces(
-            hovertemplate="<b>Pathologie:</b> %{customdata[0]}<br>" +
-                         "<b>Durée moyenne:</b> %{customdata[1]:.1f} jours<br><extra></extra>",
-            marker_color=MAIN_COLOR
-        )
-        fig.update_layout(height=800, template='plotly_white')
-        st.plotly_chart(fig, use_container_width=True)
-        
-        # Recherche de pathologies spécifiques
-        st.subheader(" Recherche de pathologies spécifiques")
-        search_term = st.text_input("Rechercher une pathologie", "")
-        
-        comparative_indices = df_tranche_age_hospi_filtered.groupby(['nom_pathologie'])['indice_comparatif_tt_age_percent'].mean().reset_index()
-        if search_term:
-            comparative_indices = comparative_indices[comparative_indices['nom_pathologie'].str.contains(search_term, case=False)]
-        
-        comparative_indices = comparative_indices.sort_values(by='indice_comparatif_tt_age_percent', ascending=True).tail(n_pathologies)
-        fig = px.bar(comparative_indices, x='indice_comparatif_tt_age_percent', y='nom_pathologie',
-                    title=f'Indices comparatifs des pathologies',
-                    labels={'indice_comparatif_tt_age_percent': 'Indice comparatif (%)',
-                           'nom_pathologie': 'Pathologie'},
-                    custom_data=['nom_pathologie', 'indice_comparatif_tt_age_percent'],
-                    orientation='h')
-        fig.update_traces(
-            hovertemplate="<b>Pathologie:</b> %{customdata[0]}<br>" +
-                         "<b>Code:</b> %{customdata[1]}<br>" +
-                         "<b>Indice comparatif:</b> %{customdata[2]:.1f}%<br><extra></extra>",
-            marker_color=MAIN_COLOR
-        )
-        fig.update_layout(height=800, template='plotly_white')
-        st.plotly_chart(fig, use_container_width=True)
+        # Création d'une figure avec deux axes Y
+        fig = make_subplots(specs=[[{"secondary_y": True}]])
 
+        # Ajout des barres pour le nombre d'hospitalisations
+        fig.add_trace(
+            go.Bar(
+                x=hospi_by_pathology['nom_pathologie'],
+                y=hospi_by_pathology['nbr_hospi'],
+                name="Nombre d'hospitalisations",
+                marker_color=MAIN_COLOR,
+                customdata=hospi_by_pathology[['nom_pathologie', 'nbr_hospi']],
+                hovertemplate="<b>Pathologie:</b> %{customdata[0]}<br>" +
+                            "<b>Hospitalisations:</b> %{customdata[1]:,.0f}<br><extra></extra>"
+            ),
+            secondary_y=False
+        )
+
+        # Ajout de la ligne pour la durée moyenne
+        fig.add_trace(
+            go.Scatter(
+                x=hospi_by_pathology['nom_pathologie'],
+                y=hospi_by_pathology['AVG_duree_hospi'],
+                name="Durée moyenne de séjour",
+                line=dict(color=SECONDARY_COLOR, width=2),
+                mode='lines+markers',
+                marker=dict(size=6),
+                customdata=hospi_by_pathology[['nom_pathologie', 'AVG_duree_hospi']],
+                hovertemplate="<b>Pathologie:</b> %{customdata[0]}<br>" +
+                            "<b>Durée moyenne:</b> %{customdata[1]:.1f} jours<br><extra></extra>"
+            ),
+            secondary_y=True
+        )
+
+        # Mise à jour de la mise en page
+        fig.update_layout(
+            title=dict(
+                text='Relation entre nombre d\'hospitalisations et durée moyenne de séjour',
+                y=0.95,
+                x=0.5,
+                xanchor='center',
+                yanchor='top'
+            ),
+            height=500,
+            template='plotly_white',
+            showlegend=False,
+            margin=dict(t=100, b=50, l=50, r=50),  # Augmenter la marge du haut (t) pour plus d'espace
+        )
+
+        # Mise à jour des titres des axes Y
+        fig.update_yaxes(title_text="Nombre d'hospitalisations", secondary_y=False)
+        fig.update_yaxes(title_text="Durée moyenne de séjour (jours)", secondary_y=True)
+
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Graphique combiné (scatter plot)
+        # Fusion des données d'hospitalisation et de durée
+        combined_data = hospi_by_pathology[['nom_pathologie', 'nbr_hospi', 'AVG_duree_hospi']]
+
+        # Création du scatter plot
+        fig = px.scatter(
+            combined_data,
+            x='nbr_hospi',
+            y='AVG_duree_hospi',
+            text='nom_pathologie',
+            title=f'Relation entre nombre d\'hospitalisations et durée moyenne de séjour',
+            labels={'nbr_hospi': 'Nombre d\'hospitalisations',
+                   'AVG_duree_hospi': 'Durée moyenne de séjour (jours)',
+                   'nom_pathologie': 'Pathologie'},
+            size='nbr_hospi',  # Taille des points proportionnelle au nombre d'hospitalisations
+            size_max=40,  # Taille maximale des points
+            color='AVG_duree_hospi',  # Couleur basée sur la durée moyenne
+            color_continuous_scale='Viridis'  # Échelle de couleur
+        )
+
+        # Personnalisation du graphique
+        fig.update_traces(
+            textposition='top center',  # Position du texte au-dessus des points
+            hovertemplate="<b>%{text}</b><br>" +
+                         "Hospitalisations: %{x:,.0f}<br>" +
+                         "Durée moyenne: %{y:.1f} jours<br>" +
+                         "<extra></extra>"
+        )
+
+        fig.update_layout(
+            height=800,
+            template='plotly_white',
+            showlegend=False,
+            # Ajout d'une annotation explicative
+            annotations=[
+                dict(
+                    text="<b>Légende</b> : La taille des points représente le nombre d'hospitalisations<br>La couleur indique la durée moyenne de séjour",
+                    showarrow=False,
+                    xref="paper", yref="paper",
+                    x=1.2, y=1.1,  # En haut (y=1) à droite (x=1)
+                    align="right",
+                    xanchor="right"  # Ancrage à droite pour éviter le débordement
+                )
+            ]
+        )
+
+        # Ajustement des marges pour éviter la superposition des labels
+        fig.update_layout(
+            margin=dict(t=100, b=50, l=50, r=50)
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Graphique 3D
+        # Fusion des données avec les trois métriques
+        combined_data_3d = pd.merge(
+            combined_data,
+            df_tranche_age_hospi_filtered.groupby('nom_pathologie')['indice_comparatif_tt_age_percent'].mean().reset_index(),
+            on='nom_pathologie',
+            how='inner'
+        )
+
+        # Création du graphique 3D
+        fig = go.Figure(data=[go.Scatter3d(
+            x=combined_data_3d['nbr_hospi'],
+            y=combined_data_3d['AVG_duree_hospi'],
+            z=combined_data_3d['indice_comparatif_tt_age_percent'],
+            mode='markers+text',
+            text=combined_data_3d['nom_pathologie'],
+            textposition='top center',
+            marker=dict(
+                size=combined_data_3d['nbr_hospi'] / combined_data_3d['nbr_hospi'].max() * 30,  # Taille normalisée
+                color=combined_data_3d['AVG_duree_hospi'],
+                colorscale='Viridis',
+                opacity=0.8,
+                colorbar=dict(title="Durée moyenne de séjour (jours)")
+            ),
+            hovertemplate="<b>%{text}</b><br>" +
+                         "Hospitalisations: %{x:,.0f}<br>" +
+                         "Durée moyenne: %{y:.1f} jours<br>" +
+                         "Indice comparatif: %{z:.1f}%<br>" +
+                         "<extra></extra>"
+        )])
+
+        # Mise en page du graphique 3D
+        fig.update_layout(
+            title="Visualisation 3D des pathologies",
+            scene=dict(
+                xaxis_title="Nombre d'hospitalisations",
+                yaxis_title="Durée moyenne de séjour (jours)",
+                zaxis_title="Indice comparatif (%)",
+                camera=dict(
+                    up=dict(x=0, y=0, z=1),
+                    center=dict(x=0, y=0, z=0),
+                    eye=dict(x=1.5, y=1.5, z=1.5)
+                )
+            ),
+            height=800,
+            template='plotly_white',
+            margin=dict(t=100, b=50, l=50, r=50)
+        )
+
+        # Ajout d'une annotation explicative
+        fig.add_annotation(
+            text="<b>Légende</b> : <br>La taille des points représente le nombre d'hospitalisations<br>La couleur indique la durée moyenne de séjour",
+            xref="paper", yref="paper",
+            x=1, y=1.1,
+            showarrow=False,
+            align="left"
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+        
     # Démographie
     with tab4:
         st.markdown("""
