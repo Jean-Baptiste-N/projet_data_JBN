@@ -647,6 +647,7 @@ if df_nbr_hospi is not None:
             y='AVG_duree_hospi',
             text='nom_pathologie',
             animation_frame=combined_data['year'].dt.year,
+            animation_group='nom_pathologie',
             title=f'Relation entre nombre d\'hospitalisations et durée moyenne de séjour',
             labels={'nbr_hospi': 'Nombre d\'hospitalisations',
                    'AVG_duree_hospi': 'Durée moyenne de séjour (jours)',
@@ -1456,8 +1457,6 @@ if df_nbr_hospi is not None:
             'Hospitalisations': '{:,.0f}',
             'Évolution (%)': '{:+.1f}%'
         }))
-        st.markdown("### 📊 Indicateurs nationaux", unsafe_allow_html=True)
-        st.markdown("### 🗺️ Répartition régionale", unsafe_allow_html=True)
-        st.markdown("### 📈 Tendances", unsafe_allow_html=True)
-        st.markdown("### 📉 Comparaisons", unsafe_allow_html=True)
-        st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")
+
+st.markdown("---")
+st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")

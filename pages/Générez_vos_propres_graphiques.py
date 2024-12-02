@@ -78,12 +78,7 @@ if df_main is not None:
         walker = StreamlitRenderer(df_hospi, spec="./config.json", debug=False)
         walker.explorer()
         
-        st.markdown("### 🎨 Personnalisation", unsafe_allow_html=True)
-        
-        st.markdown("### 📈 Visualisation", unsafe_allow_html=True)
-        
-        st.markdown("### 💾 Exportation", unsafe_allow_html=True)
-        
+        st.markdown("---")
         st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")
     else:
         st.error("Erreur lors du chargement des données. Veuillez réessayer.")

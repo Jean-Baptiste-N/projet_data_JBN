@@ -255,3 +255,6 @@ with st.expander("📝 Notes méthodologiques"):
 
 # Avertissement
 st.info("⚠️ Ces prédictions sont des estimations basées sur des modèles statistiques et doivent être utilisées comme aide à la décision uniquement.")
+
+st.markdown("---")
+st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")

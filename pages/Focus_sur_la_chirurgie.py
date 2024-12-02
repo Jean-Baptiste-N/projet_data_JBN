@@ -38,7 +38,7 @@ st.markdown ("""
 """, unsafe_allow_html=True)
 
 # Titre principal
-st.markdown ("<h1 class='main-title' style='margin-top: -70px;'>⚕️ Service deChirurgie</h1>", unsafe_allow_html=True)
+st.markdown ("<h1 class='main-title' style='margin-top: -70px;'>🏥 Service de Chirurgie</h1>", unsafe_allow_html=True)
 
 # Fonction de chargement des données
 @st.cache_resource
@@ -73,7 +73,7 @@ if df is not None:
         # Sélection du sexe
         selected_sex = st.selectbox(
             "Sexe",
-            ["Ensemble", "Femme"],
+            ["Ensemble", "Homme", "Femme"],
             key="selecteur_sexe_chir"
         )
 
@@ -297,4 +297,6 @@ if df is not None:
 
 else:
     st.error("Impossible de charger les données. Veuillez réessayer plus tard.")
-st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")
+    
+    st.markdown("---")
+    st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")

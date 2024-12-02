@@ -269,3 +269,6 @@ if df is not None:
 
     # Afficher la carte et les statistiques
     show_map(df_filtered, niveau_administratif, selected_service, sexe, selected_year)
+
+    st.markdown("---")
+    st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")

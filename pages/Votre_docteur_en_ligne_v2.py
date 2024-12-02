@@ -106,6 +106,8 @@ Pour chaque question, vous devez :
 1. Analyser soigneusement la demande de l'utilisateur
 2. Créer une requête SQL précise et adaptée pour BigQuery
 3. Interpréter les résultats de manière professionnelle et accessible
+4. Proposer des analyses complémentaires pertinentes
+5. Fournir des tableaux clairs et approprié pour aider l'utilisateur
 
 Règles importantes :
 - La table principale est `class_join_total_morbidite_population`
@@ -321,3 +323,6 @@ except ImportError as e:
     st.info("Assurez-vous d'avoir installé tous les packages nécessaires : langchain-openai, langchain-community, sqlalchemy-bigquery")
 except Exception as e:
     st.error(f"Une erreur s'est produite : {str(e)}")
+
+    st.markdown("---")
+    st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")

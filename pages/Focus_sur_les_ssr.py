@@ -70,7 +70,7 @@ if df is not None:
         # Sélection du sexe
         selected_sex = st.selectbox(
             "Sexe",
-            ["Ensemble", "Femme"],
+            ["Ensemble", "Homme", "Femme"],
             key="selecteur_sexe_ssr"
         )
 
@@ -323,4 +323,6 @@ if df is not None:
 
 else:
     st.error("Impossible de charger les données. Veuillez réessayer plus tard.")
-st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")
+
+    st.markdown("---")
+    st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")
