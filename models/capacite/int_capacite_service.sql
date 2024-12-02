@@ -1,37 +1,3 @@
--- With stjr1 as (
---     SELECT
---         t1.*,
---         t2.stjr
---     FROM {{ref('stg_capacite_services_h__capacite_2022_par_services')}} t1
---     LEFT JOIN (
---         SELECT DISTINCT FI, AN, stjr
---         FROM {{ref('stg_capacite_services_h__capacite_2021_service_stjr')}}
---         WHERE AN = 2021
---     ) t2
---     ON t1.fi = t2.FI
---     WHERE t1.an >= 2018 AND t1.an < 2022
--- ),
---  stjr2 as (
---     SELECT
---         t1.*,
---         t2.stjr
---     FROM {{ref('stg_capacite_services_h__capacite_2022_par_services')}} t1
---     LEFT JOIN (
---         SELECT DISTINCT fi, an, stjr
---         FROM {{ref('stg_capacite_services_h__capacite_2022_etablissement_stjr')}}
---         WHERE AN = 2022
---     ) t2
---     ON CAST(t1.fi AS STRING) = t2.fi
---     WHERE t1.an = 2022
---  ),
--- join_stjr as (
--- SELECT *
--- FROM stjr1
--- UNION ALL
--- SELECT *
--- FROM stjr2
--- )
-
 SELECT
 fi as id_etablissement,
 an as annee,
@@ -59,5 +25,5 @@ SEHEM as seance_hemodyalise,
 SERAD as seance_radiotherapie,
 SECHI as seance_chimio,
 cle_unique
-FROM {{ref('stg_capacite_services_h__capacite_2022_par_services')}}
+FROM {{ref('stg_capacite_services_h__capacite_2022_par_service')}}
 WHERE an >= 2018
