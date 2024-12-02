@@ -13,6 +13,15 @@ sources:
       - name: nombre_hospit
         identifier: nbr_hospi_clean
         description: 'test'
+      - name: taux_recours2
+        identifier: tableau_3_ren
+        description: "test"
+      - name: duree_sejours2
+        identifier: tableau_2_ren
+        description: "gert"
+      - name: nombre_hospit2
+        identifier: tableau_1_ren
+        description: 'test'
 
       - name: class_services
         identifier: Classification_MCO_PSY_ESND_SRR
@@ -37,6 +46,12 @@ sources:
         description: "Test"
       - name: capacite_2022_par_etablissement
         identifier: capacite_2022_par_etablissement
+        description: "Test"
+      - name: capacite_2022_par_service1
+        identifier: capacite_2022_par_service_clean
+        description: "Test"
+      - name: capacite_2022_par_etablissement1
+        identifier: capacite_2022_par_etablissement_clean
         description: "Test"
       - name: capacite_2022_etablissement_stjr
         identifier: capacite_2022_etablissement_stjr

@@ -1,6 +1,5 @@
 WITH dpt as (
     SELECT
-    id_etablissement,
     annee,
     year,
     service_medical,
@@ -31,7 +30,6 @@ WITH dpt as (
 ),
 reg as (
     SELECT
-    id_etablissement,
     annee,
     year,
     service_medical,
