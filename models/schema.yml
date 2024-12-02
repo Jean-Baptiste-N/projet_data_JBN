@@ -32,6 +32,18 @@ sources:
   - name: capacite_services_h
     schema: capacite_services_h
     tables:
+      - name: capacite_2022_par_services
+        identifier: capacite_2022_par_services
+        description: "Test"
+      - name: capacite_2022_par_etablissement
+        identifier: capacite_2022_par_etablissement
+        description: "Test"
+      - name: capacite_2022_etablissement_stjr
+        identifier: capacite_2022_etablissement_stjr
+        description: "Test"
+      - name: capacite_2021_service_stjr
+        identifier: capacite_2021_service_stjr
+        description: "Test"
       - name: capacite_services_dpt_region
         identifier: capacite_services_dpt_region
         description: 'test'
