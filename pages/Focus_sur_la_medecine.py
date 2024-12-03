@@ -127,7 +127,7 @@ if df is not None:
     # Filtre par départements
     if selected_region != "Tous les départements":
         df_filtered = df_filtered[df_filtered['nom_region'] == selected_region]
-    
+        
     # Liste déroulante de toutes les pathologies
     all_pathologies = sorted(df_filtered['nom_pathologie'].unique())
     all_pathologies.insert(0, "Toutes les pathologies")  # Ajout de l'option pour toutes les pathologies
@@ -136,7 +136,8 @@ if df is not None:
         all_pathologies,
         key="pathology_selector_psy"
     )
-    
+        # Filtre par pathologie
+
     # Afficher les données pour la pathologie sélectionnée
     if selected_pathology == "Toutes les pathologies":
         path_data = df_filtered[
@@ -289,7 +290,7 @@ if df is not None:
                 labels={'nbr_hospi': 'Nombre d\'hospitalisations',
                     'AVG_duree_hospi': 'Durée moyenne de séjour (jours)',
                     'nom_pathologie': 'Pathologie'},
-                size='nbr_hospi',
+                size=combined_data['nbr_hospi'].tolist(),
                 size_max=40,
                 color='AVG_duree_hospi',
                 color_continuous_scale='Viridis'
@@ -307,7 +308,7 @@ if df is not None:
                 labels={'nbr_hospi': 'Nombre d\'hospitalisations',
                     'AVG_duree_hospi': 'Durée moyenne de séjour (jours)',
                     'nom_pathologie': 'Pathologie'},
-                size='nbr_hospi',
+                size=combined_data['nbr_hospi'].tolist(),
                 size_max=40,
                 color='AVG_duree_hospi',
                 color_continuous_scale='Viridis'
@@ -945,7 +946,6 @@ if df is not None:
                 )
 
     with tab3:
-        st.markdown("### Répartition des hospitalisations par tranche d'âge")
 
         # Filtrer les données selon l'année sélectionnée
         if selected_year != "Toutes les années":
@@ -957,24 +957,30 @@ if df is not None:
         if selected_region != "Tous les départements":
             df_filtered = df_filtered[df_filtered['nom_region'] == selected_region]
 
-        # Ne garder que les données pour "Ensemble"
-        df_ensemble = df_filtered[df_filtered['sexe'] == 'Ensemble'].copy()
+        # Filtrer par pathologie si sélectionnée
+        if selected_pathology != "Toutes les pathologies":
+            df_filtered = df_filtered[df_filtered['nom_pathologie'] == selected_pathology]
+            # Si une pathologie spécifique est sélectionnée, on n'a pas besoin de prendre les N premières
+            top_n_patho = [selected_pathology]
+        else:
+            # Ne garder que les données pour "Ensemble"
+            df_filtered = df_filtered[df_filtered['sexe'] == 'Ensemble'].copy()
 
-        # Trouver toutes les pathologies disponibles
-        all_patho = df_ensemble.groupby('nom_pathologie')['nbr_hospi'].sum().sort_values(ascending=False)
+            # Trouver toutes les pathologies disponibles
+            all_patho = df_filtered.groupby('nom_pathologie')['nbr_hospi'].sum().sort_values(ascending=False)
 
-        # Slider pour sélectionner le nombre de pathologies
-        nb_patho = st.slider(
-            "Nombre de pathologies à afficher",
-            min_value=3,
-            max_value=10,
-            value=5,
-            key="nb_patho_age"
-        )
+            # Slider pour sélectionner le nombre de pathologies
+            nb_patho = st.slider(
+                "Nombre de pathologies à afficher",
+                min_value=3,
+                max_value=10,
+                value=5,
+                key="nb_patho_age"
+            )
 
-        # Sélectionner les N premières pathologies
-        top_n_patho = all_patho.head(nb_patho).index.tolist()
-        df_topn = df_ensemble[df_ensemble['nom_pathologie'].isin(top_n_patho)]
+            # Sélectionner les N premières pathologies
+            top_n_patho = all_patho.head(nb_patho).index.tolist()
+        df_topn = df_filtered[df_filtered['nom_pathologie'].isin(top_n_patho)]
 
         # Définir les colonnes de tranches d'âge
         age_columns = [
@@ -1041,7 +1047,7 @@ if df is not None:
                 'pathologie': 'Pathologie',
                 'annee': 'Année'
             },
-            title=f"Répartition des hospitalisations par tranche d'âge pour les {nb_patho} pathologies principales",
+            title=f"Répartition des hospitalisations par tranche d'âge pour les {len(top_n_patho)} pathologies principales",
         )
 
         # Personnaliser le layout
@@ -1112,14 +1118,14 @@ if df is not None:
             st.metric(
                 label="help",
                 value="",
-                help=f"Ce graphique animé montre l'évolution des hospitalisations par tranche d'âge pour les {nb_patho} pathologies "
+                help=f"Ce graphique animé montre l'évolution des hospitalisations par tranche d'âge pour les {len(top_n_patho)} pathologies "
                      f"les plus fréquentes{' dans ' + selected_region if selected_region != 'Tous les départements' else ''}. "
                      "La taille des bulles représente le nombre d'hospitalisations. "
                      "Utilisez les contrôles d'animation pour voir l'évolution dans le temps."
             )
 
         # Afficher le tableau récapitulatif des pathologies
-        st.markdown(f"### Récapitulatif des {nb_patho} pathologies principales")
+        st.markdown(f"### Récapitulatif des {len(top_n_patho)} pathologies principales")
         
         recap = df_topn[['nom_pathologie', 'nbr_hospi']].groupby('nom_pathologie')['nbr_hospi'].sum().reset_index()
         st.dataframe(
@@ -1127,4 +1133,3 @@ if df is not None:
                 'nbr_hospi': '{:,.0f}'
             })
         )
-
