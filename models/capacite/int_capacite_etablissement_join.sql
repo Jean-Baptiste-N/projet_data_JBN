@@ -1,6 +1,5 @@
 With join_capacite as (
     SELECT 
-  t2.id_etablissement,
   t2.annee as annee,
   DATE(CAST(t2.annee AS STRING) || "-12-31") as year,
   t2.service_medical,
@@ -30,11 +29,11 @@ With join_capacite as (
   t1.place_hospi_partielle AS total_place_hospi_partielle,
   t1.sejour_hospi_partielle AS total_sejour_hospi_partielle,
 FROM 
-  {{ref("int_capacite_etablissement")}} AS t1
+  {{ref("stg_capacite_services_h__capacite_2022_par_etablissement1")}} AS t1
 JOIN 
-  {{ref("int_capacite_service")}} AS t2
+  {{ref("stg_capacite_services_h__capacite_2022_par_service1")}} AS t2
 ON 
-  t1.id_etablissement = t2.id_etablissement
+  t1.nom_etablissement = t2.nom_etablissement
   AND t1.annee = t2.annee
 )
 

@@ -95,5 +95,6 @@ SELECT
 FROM agg_class t1
 LEFT JOIN {{ref("mart_capacite_dpt_reg_evol")}} t2
 ON t1.cle_unique = t2.cle_unique
-ORDER BY lit_hospi_complete
+
+
 
