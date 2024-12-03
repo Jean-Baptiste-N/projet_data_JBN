@@ -75,7 +75,9 @@ with col1:
         <h3>🎯 Vue générale</h3>
         <p>Explorez les tendances nationales et régionales des hospitalisations en France</p>
         <ul>
-            <li>Statistiques nationales</li>
+            <li>Tableaux de bord interactifs</li>
+            <li>Analyses démographiques</li>
+            <li>Indicateurs de performance</li>
             <li>Comparaisons régionales</li>
             <li>Évolution temporelle</li>
         </ul>
@@ -88,11 +90,12 @@ with col2:
         <h3>⚕️ Focus spécialités</h3>
         <p>Analyses détaillées par spécialité médicale</p>
         <ul>
-            <li>Chirurgie</li>
-            <li>Médecine</li>
-            <li>Obstétrique</li>
-            <li>Psychiatrie</li>
-            <li>SSR</li>
+            <li>Chirurgie et interventions</li>
+            <li>Médecine générale et spécialisée</li>
+            <li>Obstétrique et maternité</li>
+            <li>Psychiatrie et santé mentale</li>
+            <li>SSR (Soins de Suite et Réadaptation)</li>
+            <li>ESND (Établissement de Soin Longue Durée)</li>
         </ul>
         </div>
     """, unsafe_allow_html=True)
@@ -100,15 +103,32 @@ with col2:
 with col3:
     st.markdown("""
         <div class="feature-card">
-        <h3>🔧 Outils interactifs</h3>
-        <p>Personnalisez votre analyse</p>
+        <h3>🔮 Outils avancés</h3>
+        <p>Fonctionnalités interactives et prédictives</p>
         <ul>
-            <li>Générateur de graphiques</li>
+            <li>Prédictions hospitalières</li>
+            <li>Générateur de graphiques personnalisés</li>
             <li>Assistant virtuel IA</li>
-            <li>Requêtes personnalisées</li>
+            <li>Cartographie interactive</li>
+            <li>Analyses comparatives</li>
         </ul>
         </div>
     """, unsafe_allow_html=True)
+
+# Méthodologie et Sources
+st.markdown('<h2 class="section-title">📚 Méthodologie et Sources</h2>', unsafe_allow_html=True)
+st.markdown("""
+    <div class="feature-card">
+    <h3>🔍 Notre approche</h3>
+    <p>Cette étude s'appuie sur une méthodologie rigoureuse combinant :</p>
+    <ul>
+        <li>Analyse statistique approfondie des données hospitalières</li>
+        <li>Modélisation prédictive utilisant des algorithmes de machine learning</li>
+        <li>Visualisation interactive des données</li>
+        <li>Intelligence artificielle pour l'assistance utilisateur</li>
+    </ul>
+    </div>
+""", unsafe_allow_html=True)
 
 # Section Prédictions
 st.markdown('<h2 class="section-title";>🎲 Modèles prédictifs</h2>', unsafe_allow_html=True)
@@ -138,8 +158,7 @@ with tab1:
         1. Utilisez la barre de navigation à gauche pour accéder aux différentes sections
         2. Commencez par la "Vue générale" pour une vision d'ensemble
         3. Explorez ensuite les focus spécifiques selon vos intérêts
-    """)
-    st.info("Emplacement pour GIF de navigation")
+    """, unsafe_allow_html=True)
 
 with tab2:
     st.markdown("""
@@ -148,8 +167,7 @@ with tab2:
         2. Sélectionnez vos variables d'intérêt
         3. Personnalisez vos visualisations
         4. Exportez ou partagez vos résultats
-    """)
-    st.info("Emplacement pour GIF de démonstration d'analyse")
+    """, unsafe_allow_html=True)
 
 with tab3:
     st.markdown("""
@@ -185,7 +203,7 @@ st.markdown("""
     <ul style="list-style-type: none; padding-left: 0;">
         <li>🧑‍💻 <b>Jean-Baptiste Nez</b> - <a href="https://www.linkedin.com/in/jean-baptiste-nez">LinkedIn</a></li>
         <li>👨‍💻 <b>Antonin Bourdelle</b> - <a href="https://www.linkedin.com/in/antonin-bourdelle">LinkedIn</a></li>
-        <li>👩‍💻 <b>Astrid</b> - <a href="https://www.linkedin.com/in/astrid">LinkedIn</a></li>
+        <li>👩‍💻 <b>Astrid Hugonin</b> - <a href="https://www.linkedin.com/in/astrid-hugonin">LinkedIn</a></li>
     </ul>
     </br>
 

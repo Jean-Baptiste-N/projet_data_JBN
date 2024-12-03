@@ -679,6 +679,9 @@ if df_nbr_hospi is not None:
         top_pathologies = df_nbr_hospi_filtered.groupby('nom_pathologie')['nbr_hospi'].sum().nlargest(n_pathologies).index
         combined_data = combined_data[combined_data['nom_pathologie'].isin(top_pathologies)]
 
+        # Normalisation des valeurs pour la taille des points
+        max_hospi = combined_data['nbr_hospi'].max()
+        combined_data['size'] = (combined_data['nbr_hospi'] / max_hospi * 100).round().astype(int)
         # Création du scatter plot avec animation
         fig = px.scatter(
             combined_data,
@@ -691,7 +694,7 @@ if df_nbr_hospi is not None:
             labels={'nbr_hospi': 'Nombre d\'hospitalisations',
                    'AVG_duree_hospi': 'Durée moyenne de séjour (jours)',
                    'nom_pathologie': 'Pathologie'},
-            size=combined_data['nbr_hospi'].values,
+            size='size',
             size_max=40,
             color='AVG_duree_hospi',
             color_continuous_scale='Viridis',
