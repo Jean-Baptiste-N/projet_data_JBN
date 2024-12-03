@@ -70,12 +70,16 @@ df = load_data()
 
 def format_number(number):
     """Format un nombre en K ou M selon sa taille"""
-    if number >= 1_000_000:
-        return f"{number/1_000_000:.1f}M"
-    elif number >= 1_000:
-        return f"{number/1_000:.1f}K"
-    else:
-        return f"{number:.0f}"
+    try:
+        num = float(str(number).replace(',', ''))
+        if num >= 1_000_000:
+            return f"{num/1_000_000:.1f}M"
+        elif num >= 1_000:
+            return f"{num/1_000:.1f}K"
+        else:
+            return f"{num:.0f}"
+    except (ValueError, TypeError):
+        return str(number)
 
 if df is not None:
     # Remplacement des valeurs nulles pour la Covid en 2018-2019
@@ -278,6 +282,13 @@ if df is not None:
         top_pathologies = df_nbr_hospi.groupby('nom_pathologie')['nbr_hospi'].sum().nlargest(n_pathologies).index
         combined_data = combined_data[combined_data['nom_pathologie'].isin(top_pathologies)]
 
+        # Calcul des marges pour les axes en prenant en compte les maximums par année
+        max_hospi_by_year = combined_data.groupby('annee')['nbr_hospi'].max().max()
+        max_duree_by_year = combined_data.groupby('annee')['AVG_duree_hospi'].max().max()
+        
+        x_margin = max_hospi_by_year * 0.2  # Augmentation de la marge à 20%
+        y_margin = max_duree_by_year * 0.2  # Augmentation de la marge à 20%
+
         # Création du scatter plot avec animation
         if selected_year != "Toutes les années":
             # Si une année spécifique est sélectionnée, créer un scatter plot statique
@@ -293,7 +304,9 @@ if df is not None:
                 size=combined_data['nbr_hospi'].tolist(),
                 size_max=40,
                 color='AVG_duree_hospi',
-                color_continuous_scale='Viridis'
+                color_continuous_scale='Viridis',
+                range_x=[0, max_hospi_by_year + x_margin],
+                range_y=[0, max_duree_by_year + y_margin]
             )
         else:
             # Si toutes les années sont sélectionnées, créer le scatter plot animé
@@ -311,7 +324,9 @@ if df is not None:
                 size=combined_data['nbr_hospi'].tolist(),
                 size_max=40,
                 color='AVG_duree_hospi',
-                color_continuous_scale='Viridis'
+                color_continuous_scale='Viridis',
+                range_x=[0, max_hospi_by_year + x_margin],
+                range_y=[0, max_duree_by_year + y_margin]
             )
             
             # Configuration de l'animation
@@ -787,6 +802,12 @@ if df is not None:
                 },
                 title="Évolution de la capacité et du taux d'occupation par départements"
             )
+            fig4.update_traces(
+                hovertemplate="<b>%{hovertext}</b><br>" +
+                              "Lits: " + format_number("%{x}") + "<br>" +
+                              "Taux d'occupation: %{y:.1f}%<br>" +
+                              "Séjours: " + format_number("%{marker.size}")
+            )
 
             # Personnaliser le layout
             fig4.update_traces(
@@ -794,10 +815,25 @@ if df is not None:
                 mode='markers+text'
             )
 
+            # Calculer les limites des axes basées sur les données
+            x_margin = (df_scatter['lit_hospi_complete'].max() - df_scatter['lit_hospi_complete'].min()) * 0.1
+            y_margin = (df_scatter['taux_occupation'].max() - df_scatter['taux_occupation'].min()) * 0.1
+
             fig4.update_layout(
                 height=600,
                 showlegend=False,
-                # Ajuster la position des contrôles d'animation
+                xaxis=dict(
+                    range=[
+                        df_scatter['lit_hospi_complete'].min() - x_margin,
+                        df_scatter['lit_hospi_complete'].max() + x_margin
+                    ]
+                ),
+                yaxis=dict(
+                    range=[
+                        max(0, df_scatter['taux_occupation'].min() - y_margin),
+                        df_scatter['taux_occupation'].max() + y_margin
+                    ]
+                ),
                 updatemenus=[{
                     'type': 'buttons',
                     'showactive': False,
@@ -1066,6 +1102,14 @@ if df is not None:
                 x=1,
                 bgcolor='rgba(255,255,255,0.8)'  # Fond légèrement transparent
 
+            ),
+            
+            # Adaptation automatique de l'axe Y avec une marge de 10%
+            yaxis=dict(
+                range=[
+                    0,
+                    df_scatter['hospitalisations'].max() * 1.1  # Ajoute 10% de marge au-dessus
+                ]
             ),
             
             # Ajuster la position des contrôles d'animation
