@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 from google.cloud import bigquery
 from plotly.subplots import make_subplots
 
+
 # Définition des couleurs du thème
 MAIN_COLOR = '#003366'  # Bleu marine principal
 SECONDARY_COLOR = '#AFDC8F'  # Vert clair complémentaire
@@ -47,14 +48,16 @@ def load_data():
         gcp_service_account = st.secrets["gcp_service_account"]
         client = bigquery.Client.from_service_account_info(gcp_service_account)
         
-        # Chargement des données
+        # Requête SQL pour les données de chirurgie
         query = """
             SELECT *
             FROM `projet-jbn-data-le-wagon.dbt_medical_analysis_join_total_morbidite.class_join_total_morbidite_sexe_population`
-            WHERE classification = 'O'  AND niveau = 'Régions'
+            WHERE classification = 'O' AND niveau = 'Régions'
         """
+        
         df = client.query(query).to_dataframe()
         return df
+        
     except Exception as e:
         st.error(f"Erreur lors du chargement des données : {str(e)}")
         return None
@@ -64,17 +67,9 @@ df = load_data()
 
 if df is not None:
     # Filtres principaux en colonnes
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
 
     with col1:
-        # Sélection du niveau administratif
-        niveau_administratif = st.selectbox(
-            "Niveau administratif",
-            ["Régions", "Départements"],
-            key="niveau_administratif_obs"
-        )
-
-    with col2:
         # Sélection du sexe
         selected_sex = st.selectbox(
             "Sexe",
@@ -82,7 +77,7 @@ if df is not None:
             key="selecteur_sexe_obs"
         )
 
-    with col3:
+    with col2:
         # Filtre années avec une liste déroulante simple
         years = sorted(df['annee'].unique(), reverse=True)
         years_options = ["Toutes les années"] + [str(year) for year in years]
@@ -123,12 +118,28 @@ if df is not None:
         
         # Afficher les données pour la pathologie sélectionnée
         if selected_pathology == "Toutes les pathologies":
-            path_data = df_filtered  # Utiliser toutes les données
+            path_data = df_filtered[
+                (df_filtered['sexe'] == selected_sex)
+            ]
         else:
-            path_data = df_filtered[df_filtered['nom_pathologie'] == selected_pathology]
-            
+            path_data = df_filtered[
+                (df_filtered['nom_pathologie'] == selected_pathology) &
+                (df_filtered['sexe'] == selected_sex)
+            ]
+        
+        # Calcul des métriques avec les filtres appliqués
         total_hospi = path_data['nbr_hospi'].sum()
-        avg_duration = path_data['AVG_duree_hospi'].mean()
+        
+        # Calcul de la durée moyenne en fonction de la sélection
+        if selected_pathology == "Toutes les pathologies":
+            avg_duration = df_filtered[
+                (df_filtered['sexe'] == selected_sex)
+            ]['AVG_duree_hospi'].mean()
+        else:
+            avg_duration = df_filtered[
+                (df_filtered['nom_pathologie'] == selected_pathology) &
+                (df_filtered['sexe'] == selected_sex)
+            ]['AVG_duree_hospi'].mean()
         
         col1, col2, col3, col4, col5 = st.columns(5)
         with col1:
@@ -138,8 +149,9 @@ if df is not None:
         with col3:
             st.metric("Indice comparatif", f"{path_data['indice_comparatif_tt_age_percent'].mean():.1f}%")
         with col4:
-            hospi_24h = path_data['evolution_hospi_total_24h'].sum()
-            st.metric("Hospitalisations < 24h", f"{hospi_24h/1_000:,.2f}K")
+            hospi_24h = path_data['hospi_total_24h'].sum()
+            percentage_24h = (hospi_24h / total_hospi * 100) if total_hospi > 0 else 0
+            st.metric("Hospitalisations < 24h", f"{percentage_24h:.1f}%")
         with col5:
             # Sélectionner toutes les colonnes tranche_age_*
             age_columns = [col for col in path_data.columns if col.startswith('tranche_age_')]
@@ -153,7 +165,7 @@ if df is not None:
         st.divider()
 
         # Ajout d'un sélecteur pour filtrer le nombre de pathologies à afficher
-        n_pathologies = st.slider("Nombre de pathologies à afficher", 5, 14, 7)
+        n_pathologies = st.slider("Nombre de pathologies à afficher", 5, 57, 20)
         
         # Top pathologies par nombre d'hospitalisations
         hospi_by_pathology = df_filtered.groupby('nom_pathologie').agg({
@@ -241,25 +253,50 @@ if df is not None:
         combined_data = combined_data[combined_data['nom_pathologie'].isin(top_pathologies)]
 
         # Création du scatter plot avec animation
-        fig = px.scatter(
-            combined_data,
-            x='nbr_hospi',
-            y='AVG_duree_hospi',
-            text='nom_pathologie',
-            animation_frame=combined_data['annee'].astype(int),
-            animation_group='nom_pathologie',
-            title=f'Relation entre nombre d\'hospitalisations et durée moyenne de séjour',
-            labels={'nbr_hospi': 'Nombre d\'hospitalisations',
-                'AVG_duree_hospi': 'Durée moyenne de séjour (jours)',
-                'nom_pathologie': 'Pathologie'},
-            size='nbr_hospi',
-            size_max=40,
-            color='AVG_duree_hospi',
-            color_continuous_scale='Viridis',
-            range_x=[0.1, combined_data['nbr_hospi'].max() * 1.1],
-            range_y=[0.5, combined_data['AVG_duree_hospi'].max() * 1.1]
-        )
-
+        if selected_year != "Toutes les années":
+            # Si une année spécifique est sélectionnée, créer un scatter plot statique
+            fig = px.scatter(
+                combined_data,
+                x='nbr_hospi',
+                y='AVG_duree_hospi',
+                text='nom_pathologie',
+                title=f'Relation entre nombre d\'hospitalisations et durée moyenne de séjour ({selected_year})',
+                labels={'nbr_hospi': 'Nombre d\'hospitalisations',
+                    'AVG_duree_hospi': 'Durée moyenne de séjour (jours)',
+                    'nom_pathologie': 'Pathologie'},
+                size='nbr_hospi',
+                size_max=40,
+                color='AVG_duree_hospi',
+                color_continuous_scale='Viridis'
+            )
+        else:
+            # Si toutes les années sont sélectionnées, créer le scatter plot animé
+            fig = px.scatter(
+                combined_data,
+                x='nbr_hospi',
+                y='AVG_duree_hospi',
+                text='nom_pathologie',
+                animation_frame='annee',
+                animation_group='nom_pathologie',
+                title=f'Relation entre nombre d\'hospitalisations et durée moyenne de séjour',
+                labels={'nbr_hospi': 'Nombre d\'hospitalisations',
+                    'AVG_duree_hospi': 'Durée moyenne de séjour (jours)',
+                    'nom_pathologie': 'Pathologie'},
+                size='nbr_hospi',
+                size_max=40,
+                color='AVG_duree_hospi',
+                color_continuous_scale='Viridis'
+            )
+            
+            # Configuration de l'animation
+            if hasattr(fig, 'layout') and hasattr(fig.layout, 'updatemenus'):
+                try:
+                    fig.layout.sliders[0].x = 0.1
+                    fig.layout.updatemenus[0].buttons[0].args[1]['frame']['duration'] = 1500
+                    fig.layout.updatemenus[0].buttons[0].args[1]['transition']['duration'] = 500
+                except (IndexError, KeyError, AttributeError):
+                    pass  # Ignorer les erreurs si la configuration de l'animation échoue
+                    
         # Personnalisation du graphique
         fig.update_traces(
             textposition='top center',
@@ -287,10 +324,7 @@ if df is not None:
             ]
         )
 
-        # Configuration de l'animation
-        fig.layout.updatemenus[0].buttons[0].args[1]["frame"]["duration"] = 1500
-        fig.layout.updatemenus[0].buttons[0].args[1]["transition"]["duration"] = 500
-        
+        # Affichage du graphique avec une colonne d'aide
         col_chart, col_help = st.columns([1, 0.01])
         with col_chart:
             st.plotly_chart(fig, use_container_width=True)

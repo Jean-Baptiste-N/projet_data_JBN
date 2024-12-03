@@ -149,8 +149,9 @@ if df is not None:
         with col3:
             st.metric("Indice comparatif", f"{path_data['indice_comparatif_tt_age_percent'].mean():.1f}%")
         with col4:
-            hospi_24h = path_data['evolution_hospi_total_24h'].sum()
-            st.metric("Hospitalisations < 24h", f"{hospi_24h/1_000:,.2f}K")
+            hospi_24h = path_data['hospi_total_24h'].sum()
+            percentage_24h = (hospi_24h / total_hospi * 100) if total_hospi > 0 else 0
+            st.metric("Hospitalisations < 24h", f"{percentage_24h:.1f}%")
         with col5:
             # Sélectionner toutes les colonnes tranche_age_*
             age_columns = [col for col in path_data.columns if col.startswith('tranche_age_')]
