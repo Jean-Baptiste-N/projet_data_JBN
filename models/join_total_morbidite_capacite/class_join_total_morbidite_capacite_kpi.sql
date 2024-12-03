@@ -1,5 +1,14 @@
 WITH nullval as (
-SELECT *,
+SELECT 
+    niveau,
+    cle_unique,
+    sexe,
+    year,
+    annee,
+    region,
+    code_region,
+    nom_region,
+    classification,
     IFNULL(CAST(nbr_hospi AS FLOAT64), 0) AS nbr_hospi,
     IFNULL(CAST(evolution_nbr_hospi AS FLOAT64), 0) AS evolution_nbr_hospi,
     IFNULL(CAST(evolution_percent_nbr_hospi AS FLOAT64), 0) AS evolution_percent_nbr_hospi,
