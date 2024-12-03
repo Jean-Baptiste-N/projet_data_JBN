@@ -287,7 +287,6 @@ if df is not None:
                 color='AVG_duree_hospi',
                 color_continuous_scale='Viridis'
             )
-            
             # Configuration de l'animation
             if hasattr(fig, 'layout') and hasattr(fig.layout, 'updatemenus'):
                 try:
