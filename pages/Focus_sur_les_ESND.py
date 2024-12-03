@@ -1,10 +1,9 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 from google.cloud import bigquery
-from plotly.subplots import make_subplots
-
 
 # Définition des couleurs du thème
 MAIN_COLOR = '#003366'  # Bleu marine principal
@@ -38,7 +37,7 @@ st.markdown ("""
 """, unsafe_allow_html=True)
 
 # Titre principal
-st.markdown ("<h1 class='main-title' style='margin-top: -70px;'>👨‍⚕️ Service de Chirurgie</h1>", unsafe_allow_html=True)
+st.markdown ("<h1 class='main-title' style='margin-top: -70px;'>🏥 Service ESND (Établissements de soins longue durée)</h1>", unsafe_allow_html=True)
 
 # Fonction de chargement des données
 @st.cache_resource
@@ -48,18 +47,16 @@ def load_data():
         gcp_service_account = st.secrets["gcp_service_account"]
         client = bigquery.Client.from_service_account_info(gcp_service_account)
         
-        # Requête SQL pour les données de chirurgie
+        # Chargement des données
         query = """
             SELECT *
             FROM `projet-jbn-data-le-wagon.dbt_medical_analysis_join_total_morbidite.class_join_total_morbidite_sexe_population`
-            WHERE classification = 'C' AND niveau = 'Régions'
+            WHERE classification = 'ESND' AND niveau = 'Régions'
         """
-        
         df = client.query(query).to_dataframe()
         return df
-        
     except Exception as e:
-        st.error(f"Erreur lors du chargement des données : {str(e)}")
+        st.error (f"Erreur lors du chargement des données : {str(e)}")
         return None
 
 # Chargement des données
@@ -74,7 +71,7 @@ if df is not None:
         selected_sex = st.selectbox(
             "Sexe",
             ["Ensemble", "Homme", "Femme"],
-            key="selecteur_sexe_chir"
+            key="selecteur_sexe_esnd"
         )
 
     with col2:
@@ -84,7 +81,7 @@ if df is not None:
         selected_year = st.selectbox(
             "Année", 
             years_options, 
-            key="year_filter_chir"
+            key="year_filter_esnd"
         )
     
     # Filtrage des données selon les sélections
@@ -164,7 +161,7 @@ if df is not None:
         st.divider()
 
         # Ajout d'un sélecteur pour filtrer le nombre de pathologies à afficher
-        n_pathologies = st.slider("Nombre de pathologies à afficher", 5, 57, 20)
+        n_pathologies = st.slider("Nombre de pathologies à afficher", 3, 8, 8)
         
         # Top pathologies par nombre d'hospitalisations
         hospi_by_pathology = df_filtered.groupby('nom_pathologie').agg({
@@ -252,50 +249,25 @@ if df is not None:
         combined_data = combined_data[combined_data['nom_pathologie'].isin(top_pathologies)]
 
         # Création du scatter plot avec animation
-        if selected_year != "Toutes les années":
-            # Si une année spécifique est sélectionnée, créer un scatter plot statique
-            fig = px.scatter(
-                combined_data,
-                x='nbr_hospi',
-                y='AVG_duree_hospi',
-                text='nom_pathologie',
-                title=f'Relation entre nombre d\'hospitalisations et durée moyenne de séjour ({selected_year})',
-                labels={'nbr_hospi': 'Nombre d\'hospitalisations',
-                    'AVG_duree_hospi': 'Durée moyenne de séjour (jours)',
-                    'nom_pathologie': 'Pathologie'},
-                size='nbr_hospi',
-                size_max=40,
-                color='AVG_duree_hospi',
-                color_continuous_scale='Viridis'
-            )
-        else:
-            # Si toutes les années sont sélectionnées, créer le scatter plot animé
-            fig = px.scatter(
-                combined_data,
-                x='nbr_hospi',
-                y='AVG_duree_hospi',
-                text='nom_pathologie',
-                animation_frame='annee',
-                animation_group='nom_pathologie',
-                title=f'Relation entre nombre d\'hospitalisations et durée moyenne de séjour',
-                labels={'nbr_hospi': 'Nombre d\'hospitalisations',
-                    'AVG_duree_hospi': 'Durée moyenne de séjour (jours)',
-                    'nom_pathologie': 'Pathologie'},
-                size='nbr_hospi',
-                size_max=40,
-                color='AVG_duree_hospi',
-                color_continuous_scale='Viridis'
-            )
-            
-            # Configuration de l'animation
-            if hasattr(fig, 'layout') and hasattr(fig.layout, 'updatemenus'):
-                try:
-                    fig.layout.sliders[0].x = 0.1
-                    fig.layout.updatemenus[0].buttons[0].args[1]['frame']['duration'] = 1500
-                    fig.layout.updatemenus[0].buttons[0].args[1]['transition']['duration'] = 500
-                except (IndexError, KeyError, AttributeError):
-                    pass  # Ignorer les erreurs si la configuration de l'animation échoue
-                    
+        fig = px.scatter(
+            combined_data,
+            x='nbr_hospi',
+            y='AVG_duree_hospi',
+            text='nom_pathologie',
+            animation_frame=combined_data['annee'].astype(int),
+            animation_group='nom_pathologie',
+            title=f'Relation entre nombre d\'hospitalisations et durée moyenne de séjour',
+            labels={'nbr_hospi': 'Nombre d\'hospitalisations',
+                'AVG_duree_hospi': 'Durée moyenne de séjour (jours)',
+                'nom_pathologie': 'Pathologie'},
+            size='nbr_hospi',
+            size_max=40,
+            color='AVG_duree_hospi',
+            color_continuous_scale='Viridis',
+            range_x=[0.1, combined_data['nbr_hospi'].max() * 1.1],
+            range_y=[0.5, combined_data['AVG_duree_hospi'].max() * 1.1]
+        )
+
         # Personnalisation du graphique
         fig.update_traces(
             textposition='top center',
@@ -323,7 +295,10 @@ if df is not None:
             ]
         )
 
-        # Affichage du graphique avec une colonne d'aide
+        # Configuration de l'animation
+        fig.layout.updatemenus[0].buttons[0].args[1]["frame"]["duration"] = 1500
+        fig.layout.updatemenus[0].buttons[0].args[1]["transition"]["duration"] = 500
+        
         col_chart, col_help = st.columns([1, 0.01])
         with col_chart:
             st.plotly_chart(fig, use_container_width=True)

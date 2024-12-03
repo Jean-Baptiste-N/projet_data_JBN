@@ -36,7 +36,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Titre principal
-st.markdown("<h1 class='main-title'>🌍 Carte de France des hospitalisations</h1>", unsafe_allow_html=True)
+st.markdown("<h1 class='main-title' style='margin-top: -70px; margin-bottom: -8000px;'>🌍 Carte de France des hospitalisations</h1>", unsafe_allow_html=True)
 
 # Fonction de chargement des données
 @st.cache_resource
@@ -49,7 +49,7 @@ def load_data():
         # Chargement des données
         query = """
             SELECT *
-            FROM `projet-jbn-data-le-wagon.dbt_medical_analysis_join_total_morbidite.class_join_total_morbidite_population`
+            FROM `projet-jbn-data-le-wagon.dbt_medical_analysis_join_total_morbidite.class_join_total_morbidite_sexe_population`
         """
         df = client.query(query).to_dataframe()
         return df
@@ -100,7 +100,7 @@ def get_highlight_function(x):
 
 def generate_map(map_data, geojson_data, niveau_administratif, df_filtered, sexe, annee, service):
     # Créer la carte de base
-    m = folium.Map(location=[46.603354, 1.888334], zoom_start=6)
+    m = folium.Map(location=[46.603354, 1.888334], zoom_start=6, tiles='Stadia.AlidadeSatellite')
 
     # Convertir les données en DataFrame pour Folium
     df_map = pd.DataFrame(list(map_data.items()), columns=['code', 'nbr_hospi'])
@@ -129,10 +129,10 @@ def generate_map(map_data, geojson_data, niveau_administratif, df_filtered, sexe
         columns=['code', 'nbr_hospi'],
         key_on='feature.properties.code',
         fill_color='YlOrBr',
-        fill_opacity=0.7,
+        fill_opacity=0.8,
         line_opacity=0.2,
         legend_name="Nombre d'hospitalisations",
-        bins=8,
+        bins=14,
         nan_fill_color="white"
     ).add_to(m)
     
@@ -192,7 +192,27 @@ def show_map(df_filtered, niveau_administratif, selected_service, sexe, annee):
     m = generate_map(map_data, geojson_data, niveau_administratif, filtered_df, sexe, annee, selected_service)
     
     # Afficher la carte
-    st_folium(m, width=1200, height=800)
+    col_chart, col_help = st.columns([1, 0.01])
+    with col_chart:
+        st_folium(m, width=1200, height=800)
+    with col_help:
+        st.metric(
+            label="help",
+            value="",
+            help="""Cette carte interactive vous permet de visualiser la distribution des hospitalisations en France.
+            
+            🔍 Navigation :
+            - Zoomez avec la molette de la souris
+            - Cliquez et faites glisser pour vous déplacer
+            - Survolez une région pour voir les détails
+            
+            📊 Informations affichées :
+            - Nombre total d'hospitalisations
+            - Durée moyenne de séjour
+            - Top pathologies par territoire
+            
+            🎨 Les couleurs plus foncées indiquent un nombre plus élevé d'hospitalisations."""
+        )
 
 # Chargement des données
 df = load_data()
@@ -238,7 +258,7 @@ if df is not None:
         'O': 'Obstétrique',
         'PSY': 'Psychiatrie',
         'SSR': 'Soins de suite et réadaptation',
-        'ESND': 'Établissement non défini'
+        'ESND': 'Établissement de soin longue durée'
     }
     
     selected_service = st.selectbox(
@@ -249,3 +269,6 @@ if df is not None:
 
     # Afficher la carte et les statistiques
     show_map(df_filtered, niveau_administratif, selected_service, sexe, selected_year)
+
+    st.markdown("---")
+    st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")
