@@ -49,6 +49,7 @@ def load_data():
         client = bigquery.Client.from_service_account_info(gcp_service_account)
         
         # Requête SQL pour les données de chirurgie
+        
         df = client.query("""
             SELECT *
             FROM `projet-jbn-data-le-wagon.dbt_medical_analysis_join_total_morbidite.class_join_total_morbidite_sexe_population`
@@ -66,12 +67,16 @@ df = load_data()
 
 def format_number(number):
     """Format un nombre en K ou M selon sa taille"""
-    if number >= 1_000_000:
-        return f"{number/1_000_000:.1f}M"
-    elif number >= 1_000:
-        return f"{number/1_000:.1f}K"
-    else:
-        return f"{number:.0f}"
+    try:
+        num = float(str(number).replace(',', ''))
+        if num >= 1_000_000:
+            return f"{num/1_000_000:.1f}M"
+        elif num >= 1_000:
+            return f"{num/1_000:.1f}K"
+        else:
+            return f"{num:.0f}"
+    except (ValueError, TypeError):
+        return str(number)
 
 if df is not None:
     # Remplacement des valeurs nulles pour la Covid en 2018-2019
@@ -86,7 +91,7 @@ if df is not None:
         selected_sex = st.selectbox(
             "Sexe",
             ["Ensemble", "Femme","Homme"],
-            key="selecteur_sexe_med"
+            key="selecteur_sexe_chir"
         )
 
     with col2:
@@ -96,7 +101,7 @@ if df is not None:
         selected_year = st.selectbox(
             "Année", 
             years_options, 
-            key="year_filter_med"
+            key="year_filter_chir"
         )
         
     with col3:
@@ -106,7 +111,7 @@ if df is not None:
         selected_region = st.selectbox(
             "Départements",
             regions_options,
-            key="region_filter_med"
+            key="region_filter_chir"
         )
     
     # Filtrage des données selon les sélections
@@ -123,17 +128,18 @@ if df is not None:
     # Filtre par départements
     if selected_region != "Tous les départements":
         df_filtered = df_filtered[df_filtered['nom_region'] == selected_region]
-    
+        
     # Liste déroulante de toutes les pathologies
     all_pathologies = sorted(df_filtered['nom_pathologie'].unique())
     all_pathologies.insert(0, "Toutes les pathologies")  # Ajout de l'option pour toutes les pathologies
     selected_pathology = st.selectbox(
-        "🔍 Sélectionner une intervention chirurgicale pour obtenir des détails",
+        "🔍 Sélectionner une pathologie en chirurgie pour obtenir des détails",
         all_pathologies,
-        key="pathology_selector_psy"
+        key="pathology_selector_chir"
     )
-    
-    # Afficher les données pour l'intervention sélectionnée
+        # Filtre par pathologie
+
+    # Afficher les données pour la pathologie sélectionnée
     if selected_pathology == "Toutes les pathologies":
         path_data = df_filtered[
             (df_filtered['sexe'] == selected_sex)
@@ -160,7 +166,7 @@ if df is not None:
     
     col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
-        st.metric("Total d'interventions", format_number(total_hospi))
+        st.metric("Total d'hospitalisations", format_number(total_hospi))
     with col2:
         st.metric("Durée moyenne", f"{avg_duration:.1f} jours")
     with col3:
@@ -179,16 +185,16 @@ if df is not None:
         st.metric("Tranche d'âge majoritaire", most_common_age)
     
     tab1, tab2, tab3 = st.tabs([
-        "📈 Analyse par interventions",
+        "📈 Analyse par pathologies",
         "🗺️ Analyse par capacité",
         "📊 Analyse démographique",
     ])
 
     with tab1:
-        # Ajout d'un sélecteur pour filtrer le nombre d'interventions à afficher
-        n_pathologies = st.slider("Nombre d'interventions à afficher", 5, 57, 20)
+        # Ajout d'un sélecteur pour filtrer le nombre de pathologies à afficher
+        n_pathologies = st.slider("Nombre de pathologies à afficher", 5, 57, 20)
         
-        # Top interventions par nombre d'hospitalisations
+        # Top pathologies par nombre d'hospitalisations
         hospi_by_pathology = df_filtered.groupby('nom_pathologie').agg({
             'nbr_hospi': 'sum',
             'AVG_duree_hospi': 'mean'
@@ -232,7 +238,7 @@ if df is not None:
         # Mise à jour de la mise en page
         fig.update_layout(
             title=dict(
-                text='Interventions chirurgicales : Hospitalisations et durée moyenne de séjour',
+                text='Pathologies chirurgicales : Hospitalisations et durée moyenne de séjour',
                 y=0.95,
                 x=0.5,
                 xanchor='right',
@@ -253,7 +259,7 @@ if df is not None:
         with col_chart:
             st.plotly_chart(fig, use_container_width=True)
         with col_help:
-            st.metric(label="help", value="", help="Ce graphique montre la relation entre le nombre d'hospitalisations (barres) et la durée moyenne de séjour (ligne) pour les interventions chirurgicales les plus fréquentes.")
+            st.metric(label="help", value="", help="Ce graphique montre la relation entre le nombre d'hospitalisations (barres) et la durée moyenne de séjour (ligne) pour les pathologies chirurgicales les plus fréquentes.")
 
         # Préparation des DataFrames pour les graphiques
         df_nbr_hospi = df_filtered.copy()
@@ -273,6 +279,13 @@ if df is not None:
         top_pathologies = df_nbr_hospi.groupby('nom_pathologie')['nbr_hospi'].sum().nlargest(n_pathologies).index
         combined_data = combined_data[combined_data['nom_pathologie'].isin(top_pathologies)]
 
+        # Calcul des marges pour les axes en prenant en compte les maximums par année
+        max_hospi_by_year = combined_data.groupby('annee')['nbr_hospi'].max().max()
+        max_duree_by_year = combined_data.groupby('annee')['AVG_duree_hospi'].max().max()
+        
+        x_margin = max_hospi_by_year * 0.2  # Augmentation de la marge à 20%
+        y_margin = max_duree_by_year * 0.2  # Augmentation de la marge à 20%
+
         # Création du scatter plot avec animation
         if selected_year != "Toutes les années":
             # Si une année spécifique est sélectionnée, créer un scatter plot statique
@@ -285,10 +298,12 @@ if df is not None:
                 labels={'nbr_hospi': 'Nombre d\'hospitalisations',
                     'AVG_duree_hospi': 'Durée moyenne de séjour (jours)',
                     'nom_pathologie': 'Pathologie'},
-                size='nbr_hospi',
+                size=combined_data['nbr_hospi'].tolist(),
                 size_max=40,
                 color='AVG_duree_hospi',
-                color_continuous_scale='Viridis'
+                color_continuous_scale='Viridis',
+                range_x=[0, max_hospi_by_year + x_margin],
+                range_y=[0, max_duree_by_year + y_margin]
             )
         else:
             # Si toutes les années sont sélectionnées, créer le scatter plot animé
@@ -303,10 +318,12 @@ if df is not None:
                 labels={'nbr_hospi': 'Nombre d\'hospitalisations',
                     'AVG_duree_hospi': 'Durée moyenne de séjour (jours)',
                     'nom_pathologie': 'Pathologie'},
-                size='nbr_hospi',
+                size=combined_data['nbr_hospi'].tolist(),
                 size_max=40,
                 color='AVG_duree_hospi',
-                color_continuous_scale='Viridis'
+                color_continuous_scale='Viridis',
+                range_x=[0, max_hospi_by_year + x_margin],
+                range_y=[0, max_duree_by_year + y_margin]
             )
             
             # Configuration de l'animation
@@ -350,7 +367,7 @@ if df is not None:
         with col_chart:
             st.plotly_chart(fig, use_container_width=True)
         with col_help:
-            st.metric(label="help", value="", help="Ce graphique animé montre l'évolution de la relation entre le nombre d'hospitalisations et la durée moyenne de séjour pour chaque intervention au fil des années. La taille des bulles représente le nombre d'hospitalisations.")
+            st.metric(label="help", value="", help="Ce graphique animé montre l'évolution de la relation entre le nombre d'hospitalisations et la durée moyenne de séjour pour chaque pathologie au fil des années. La taille des bulles représente le nombre d'hospitalisations.")
         st.markdown("---")
         # Graphique 3D
         # Fusion des données avec les trois métriques
@@ -493,7 +510,7 @@ if df is not None:
         # Mise en page du graphique 3D
         fig.update_layout(
             title=dict(
-                text='Évolution des interventions selon trois dimensions clés',
+                text='Évolution des pathologies selon trois dimensions clés',
                 y=0.95,
                 x=0.4,
                 xanchor='right',
@@ -575,10 +592,10 @@ if df is not None:
         with col_chart:
             st.plotly_chart(fig, use_container_width=True)
         with col_help:
-            st.metric(label="help", value="", help="Ce graphique 3D montre la distribution des hospitalisations par intervention, durée moyenne de séjour et indice comparatif. Utilisez les contrôles pour faire pivoter et zoomer sur le graphique.")
+            st.metric(label="help", value="", help="Ce graphique 3D montre la distribution des hospitalisations par pathologie, durée moyenne de séjour et indice comparatif. Utilisez les contrôles pour faire pivoter et zoomer sur le graphique.")
         st.markdown("---")
         # Tableau récapitulatif détaillé
-        st.subheader("Évolution des interventions - Augmentation les plus importantes (2018-2022)")
+        st.subheader("Évolution des pathologies - Augmentation les plus importantes (2018-2022)")
         
         # Calculer les évolutions année par année
         evolutions_by_year = {}
@@ -643,7 +660,7 @@ if df is not None:
         st.markdown("---")
         
         # Deuxième tableau avec les baisses en premier
-        st.subheader("Évolution des interventions - Baisses les plus importantes (2018-2022)")
+        st.subheader("Évolution des pathologies - Baisses les plus importantes (2018-2022)")
         
         # Utiliser le même DataFrame mais trié dans l'ordre inverse
         df_summary_desc = df_summary.sort_values('Évol. globale (%)', ascending=True)
@@ -782,6 +799,12 @@ if df is not None:
                 },
                 title="Évolution de la capacité et du taux d'occupation par départements"
             )
+            fig4.update_traces(
+                hovertemplate="<b>%{hovertext}</b><br>" +
+                              "Lits: " + format_number("%{x}") + "<br>" +
+                              "Taux d'occupation: %{y:.1f}%<br>" +
+                              "Séjours: " + format_number("%{marker.size}")
+            )
 
             # Personnaliser le layout
             fig4.update_traces(
@@ -789,10 +812,25 @@ if df is not None:
                 mode='markers+text'
             )
 
+            # Calculer les limites des axes basées sur les données
+            x_margin = (df_scatter['lit_hospi_complete'].max() - df_scatter['lit_hospi_complete'].min()) * 0.1
+            y_margin = (df_scatter['taux_occupation'].max() - df_scatter['taux_occupation'].min()) * 0.1
+
             fig4.update_layout(
                 height=600,
                 showlegend=False,
-                # Ajuster la position des contrôles d'animation
+                xaxis=dict(
+                    range=[
+                        df_scatter['lit_hospi_complete'].min() - x_margin,
+                        df_scatter['lit_hospi_complete'].max() + x_margin
+                    ]
+                ),
+                yaxis=dict(
+                    range=[
+                        max(0, df_scatter['taux_occupation'].min() - y_margin),
+                        df_scatter['taux_occupation'].max() + y_margin
+                    ]
+                ),
                 updatemenus=[{
                     'type': 'buttons',
                     'showactive': False,
@@ -819,11 +857,11 @@ if df is not None:
             # Formater les axes
             fig4.update_xaxes(
                 tickformat=",",
-                range=[-1000, 12000]  # Plage plus large pour l'axe X
+                range=[-100, 12000]  # Plage plus large pour l'axe X
             )
             fig4.update_yaxes(
                 tickformat=".1f",
-                range=[0, 210]  # Maintenir la plage pour le taux d'occupation
+                range=[0, 440]  # Maintenir la plage pour le taux d'occupation
             )
 
             # Affichage du graphique avec une colonne d'aide
@@ -941,7 +979,6 @@ if df is not None:
                 )
 
     with tab3:
-        st.markdown("### Répartition des hospitalisations par tranche d'âge")
 
         # Filtrer les données selon l'année sélectionnée
         if selected_year != "Toutes les années":
@@ -953,24 +990,30 @@ if df is not None:
         if selected_region != "Tous les départements":
             df_filtered = df_filtered[df_filtered['nom_region'] == selected_region]
 
-        # Ne garder que les données pour "Ensemble"
-        df_ensemble = df_filtered[df_filtered['sexe'] == 'Ensemble'].copy()
+        # Filtrer par pathologie si sélectionnée
+        if selected_pathology != "Toutes les pathologies":
+            df_filtered = df_filtered[df_filtered['nom_pathologie'] == selected_pathology]
+            # Si une pathologie spécifique est sélectionnée, on n'a pas besoin de prendre les N premières
+            top_n_patho = [selected_pathology]
+        else:
+            # Ne garder que les données pour "Ensemble"
+            df_filtered = df_filtered[df_filtered['sexe'] == 'Ensemble'].copy()
 
-        # Trouver toutes les pathologies disponibles
-        all_patho = df_ensemble.groupby('nom_pathologie')['nbr_hospi'].sum().sort_values(ascending=False)
+            # Trouver toutes les pathologies disponibles
+            all_patho = df_filtered.groupby('nom_pathologie')['nbr_hospi'].sum().sort_values(ascending=False)
 
-        # Slider pour sélectionner le nombre de pathologies
-        nb_patho = st.slider(
-            "Nombre de pathologies à afficher",
-            min_value=3,
-            max_value=10,
-            value=5,
-            key="nb_patho_age"
-        )
+            # Slider pour sélectionner le nombre de pathologies
+            nb_patho = st.slider(
+                "Nombre de pathologies à afficher",
+                min_value=3,
+                max_value=10,
+                value=5,
+                key="nb_patho_age"
+            )
 
-        # Sélectionner les N premières pathologies
-        top_n_patho = all_patho.head(nb_patho).index.tolist()
-        df_topn = df_ensemble[df_ensemble['nom_pathologie'].isin(top_n_patho)]
+            # Sélectionner les N premières pathologies
+            top_n_patho = all_patho.head(nb_patho).index.tolist()
+        df_topn = df_filtered[df_filtered['nom_pathologie'].isin(top_n_patho)]
 
         # Définir les colonnes de tranches d'âge
         age_columns = [
@@ -1037,7 +1080,7 @@ if df is not None:
                 'pathologie': 'Pathologie',
                 'annee': 'Année'
             },
-            title=f"Répartition des hospitalisations par tranche d'âge pour les {nb_patho} pathologies principales",
+            title=f"Répartition des hospitalisations par tranche d'âge pour les {len(top_n_patho)} pathologies principales",
         )
 
         # Personnaliser le layout
@@ -1056,6 +1099,14 @@ if df is not None:
                 x=1,
                 bgcolor='rgba(255,255,255,0.8)'  # Fond légèrement transparent
 
+            ),
+            
+            # Adaptation automatique de l'axe Y avec une marge de 10%
+            yaxis=dict(
+                range=[
+                    0,
+                    df_scatter['hospitalisations'].max() * 1.1  # Ajoute 10% de marge au-dessus
+                ]
             ),
             
             # Ajuster la position des contrôles d'animation
@@ -1108,14 +1159,14 @@ if df is not None:
             st.metric(
                 label="help",
                 value="",
-                help=f"Ce graphique animé montre l'évolution des hospitalisations par tranche d'âge pour les {nb_patho} pathologies "
+                help=f"Ce graphique animé montre l'évolution des hospitalisations par tranche d'âge pour les {len(top_n_patho)} pathologies "
                      f"les plus fréquentes{' dans ' + selected_region if selected_region != 'Tous les départements' else ''}. "
                      "La taille des bulles représente le nombre d'hospitalisations. "
                      "Utilisez les contrôles d'animation pour voir l'évolution dans le temps."
             )
 
         # Afficher le tableau récapitulatif des pathologies
-        st.markdown(f"### Récapitulatif des {nb_patho} pathologies principales")
+        st.markdown(f"### Récapitulatif des {len(top_n_patho)} pathologies principales")
         
         recap = df_topn[['nom_pathologie', 'nbr_hospi']].groupby('nom_pathologie')['nbr_hospi'].sum().reset_index()
         st.dataframe(

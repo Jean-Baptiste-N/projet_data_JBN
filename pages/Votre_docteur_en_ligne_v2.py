@@ -10,6 +10,7 @@ import os
 from sqlalchemy.engine import create_engine
 from sqlalchemy_bigquery import BigQueryDialect
 import time
+from streamlit_lottie import st_lottie
 
 MAIN_COLOR = "#FF4B4B"
 
@@ -106,73 +107,107 @@ try:
             toolkit = SQLDatabaseToolkit(db=db, llm=llm)
             
             # Créer un prompt système personnalisé pour le contexte médical
-            system_message = """Vous êtes un assistant médical spécialisé dans l'analyse des données hospitalières françaises.
-Votre rôle est d'aider à comprendre et analyser les tendances en matière d'hospitalisations, de pathologies et de services médicaux.
+            system_message = """
+            Vous êtes un assistant médical spécialisé dans l'analyse des données hospitalières françaises.
+            Votre rôle est d'aider à comprendre et analyser les tendances en matière d'hospitalisations, de pathologies et de services médicaux.
 
-Pour chaque question, vous devez :
-1. Analyser soigneusement la demande de l'utilisateur
-2. Créer une requête SQL précise et adaptée pour BigQuery
-3. Interpréter les résultats de manière professionnelle et accessible
-4. Proposer des analyses complémentaires pertinentes
-5. Fournir des tableaux clairs et approprié pour aider l'utilisateur
+            Pour chaque question, vous devez :
+            1. Analyser soigneusement la demande de l'utilisateur
+            2. Créer une requête SQL précise et adaptée pour BigQuery
+            3. Interpréter les résultats de manière professionnelle et accessible
+            4. Proposer des analyses complémentaires pertinentes
+            5. Fournir des visualisations claires et appropriées pour aider l'utilisateur
+            6. Réponds à l'utilisateur en Français uniquement
 
-Règles importantes :
-- La table principale est `class_join_total_morbidite_population`
-- Utilisez la syntaxe SQL BigQuery (par exemple DATE() pour les dates)
-- Limitez les résultats à 10 lignes sauf si spécifié autrement
-- Présentez les résultats de manière claire avec des émojis appropriés
-- Gardez un ton professionnel car nous parlons de santé
-- Proposez des analyses complémentaires pertinentes
+            Règles importantes :
+            - Les tables principales sont :
+              * `class_join_total_morbidite_sexe_population` (données principales)
+              * `class_join_total_morbidite_capacite_kpi` (données de capacité)
+            - Utilisez la syntaxe SQL BigQuery (par exemple DATE() pour les dates)
+            - Limitez les résultats à 10 lignes sauf si spécifié autrement
+            - Présentez les résultats de manière claire avec des émojis appropriés
+            - Gardez un ton professionnel car nous parlons de santé
+            - Proposez des analyses complémentaires pertinentes
 
-Les colonnes principales sont :
-- niveau (object) : Niveau administratif (département, région).
-- cle_unique (object) : Identifiant unique par enregistrement.
-- sexe (object) : Sexe (Homme/Femme/Ensemble).
-- year (dbdate) : Date en format AAAA-MM-JJ.
-- annee (Int64) : Année (format numérique).
-- region (object) : Code ou nom de la région.
-- code_region (Int64) : Code numérique de la région.
-- nom_region (object) : Nom complet de la région.
+            Structure des données principales :
+            
+            1. Identification et Localisation
+            - niveau (STRING) : Niveau administratif (département, région)
+            - cle_unique (STRING) : Identifiant unique par enregistrement
+            - sexe (STRING) : Homme/Femme/Ensemble
+            - year (DATE) : Format AAAA-MM-JJ
+            - annee (INTEGER) : Année en format numérique
+            - region (STRING) : Code ou nom de la région
+            - code_region (INTEGER) : Code numérique de la région
+            - nom_region (STRING) : Nom complet de la région
 
-Pathologie
+            2. Pathologie
+            - pathologie (STRING) : Code descriptif de la pathologie
+            - code_pathologie (INTEGER) : Code numérique de la pathologie
+            - nom_pathologie (STRING) : Nom complet de la pathologie
 
-- pathologie (object) : Code descriptif de la pathologie.
-- code_pathologie (Int64) : Code numérique de la pathologie.
-- nom_pathologie (object) : Nom complet de la pathologie.
+            3. Hospitalisations
+            - nbr_hospi (INTEGER) : Nombre total d'hospitalisations
+            - hospi_prog_24h (FLOAT) : Hospitalisations programmées (24h)
+            - hospi_autres_24h (FLOAT) : Autres hospitalisations (24h)
+            - hospi_total_24h (FLOAT) : Total hospitalisations en 24h
+            - hospi_[1-9]J (FLOAT) : Hospitalisations par durée (1-9 jours)
+            - hospi_10J_19J (FLOAT) : Hospitalisations de 10 à 19 jours
+            - hospi_20J_29J (FLOAT) : Hospitalisations de 20 à 29 jours
+            - hospi_30J (FLOAT) : Hospitalisations de 30 jours et plus
+            - hospi_total_jj (FLOAT) : Total toutes durées confondues
+            - AVG_duree_hospi (FLOAT) : Durée moyenne des hospitalisations
 
-Hospitalisations
+            4. Données Démographiques
+            Les données démographiques sont exprimées en proportions (FLOAT) pour chaque tranche d'âge :
+            - tranche_age_0_1 : Nourrissons (0 à 1 an)
+            - tranche_age_1_4 : Jeunes enfants (1 à 4 ans)
+            - tranche_age_5_14 : Enfants (5 à 14 ans)
+            - tranche_age_15_24 : Adolescents et jeunes adultes (15 à 24 ans)
+            - tranche_age_25_34 : Jeunes adultes (25 à 34 ans)
+            - tranche_age_35_44 : Adultes (35 à 44 ans)
+            - tranche_age_45_54 : Adultes matures (45 à 54 ans)
+            - tranche_age_55_64 : Seniors actifs (55 à 64 ans)
+            - tranche_age_65_74 : Jeunes retraités (65 à 74 ans)
+            - tranche_age_75_84 : Personnes âgées (75 à 84 ans)
+            - tranche_age_85_et_plus : Personnes très âgées (85 ans et plus)
 
-- nbr_hospi (Int64) : Nombre total d’hospitalisations.
-- evolution_nbr_hospi (Int64) : Variation absolue du nombre d’hospitalisations.
-- evolution_percent_nbr_hospi (float64) : Variation en pourcentage.
-- hospi_prog_24h (Int64) : Hospitalisations programmées (24h).
-- hospi_autres_24h (Int64) : Autres hospitalisations (24h).
-- hospi_total_24h (Int64) : Total hospitalisations en 24h.
-- 18-29. hospi_1J à hospi_30J (Int64) : Durées d’hospitalisation (jours spécifiques ou plages).
-- hospi_total_jj (Int64) : Total hospitalisations, toutes durées confondues.
-- total_hospi (Int64) : Nombre global d’hospitalisations.
-- AVG_duree_hospi (float64) : Durée moyenne des hospitalisations.
+            Ces proportions permettent d'analyser :
+            - La répartition des hospitalisations par âge
+            - Les tendances spécifiques à certaines tranches d'âge
+            - La comparaison entre différentes régions ou services médicaux
+            - L'évolution temporelle de la structure d'âge des patients
 
-Évolution hospitalière
+            5. Indicateurs de Santé
+            - tx_brut_tt_age_pour_mille (FLOAT) : Taux brut pour 1 000 habitants
+            - tx_standard_tt_age_pour_mille (FLOAT) : Taux standardisé pour 1 000 habitants
+            - indice_comparatif_tt_age_percent (FLOAT) : Indice standardisé en pourcentage
 
-- 33-39. evolution_hospi_* (Int64, float64) : Variations absolues et en pourcentage des différents indicateurs hospitaliers (24h, total, durée moyenne, etc.).
-Tranches d’âge
+            6. Classification et Population
+            - classification (STRING) : Service médical :
+              * M (Médecine)
+              * C (Chirurgie)
+              * SSR (Soins de Suite et de Réadaptation)
+              * O (Obstétrique)
+              * ESND (Établissement de Soin Longue Durée)
+              * PSY (Psychothérapie)
 
-- 40-50. tranche_age_* (float64) : Proportions d’hospitalisations par tranche d’âge (de 0-1 an à 85 ans et plus).
+            - population (INTEGER) : Population totale par département
 
-Taux et indices
+            Données de capacité (table class_join_total_morbidite_capacite_kpi) :
+            
+            1. Capacité d'Accueil
+            - lit_hospi_complete (FLOAT) : Nombre de lits en hospitalisation complète
+            - place_hospi_partielle (FLOAT) : Nombre de places en hospitalisation partielle
+            - passage_urgence (FLOAT) : Nombre de passages aux urgences
 
-- tx_brut_tt_age_pour_mille (float64) : Taux brut pour 1 000 habitants.
-- tx_standard_tt_age_pour_mille (float64) : Taux standardisé pour 1 000 habitants.
-- indice_comparatif_tt_age_percent (float64) : Indice standardisé en pourcentage.
-- 54 à 59. evolution_tx_* (float64) : Variations de taux brut, standardisé, et indices comparatifs en pourcentage.
-Divers
-- classification (object) : Classification en terme de service médical : M (Médecine), C (Chirurgie), SSR (soins de suite et de réadaptation), O (Obstétrique), ESND (Établissement de soin longue durée), PSY (Psychothérapie).
-- population (Int64) : Population totale associée par région et département (valeurs dupliqués).
-- evolution_percent_indice_comparatif_tt_age_percent (float64) : Variation en pourcentage de l'indice comparatif pour tous âges.
+            2. Activité Hospitalière
+            - sejour_hospi_complete (FLOAT) : Nombre de séjours en hospitalisation complète
+            - sejour_hospi_partielle (FLOAT) : Nombre de séjours en hospitalisation partielle
+            - journee_hospi_complete (FLOAT) : Nombre de journées d'hospitalisation complète
 
-N'hésitez pas à croiser les données pour fournir des analyses pertinentes.
-"""
+            N'hésitez pas à croiser les données entre les tables pour fournir des analyses pertinentes.
+            """
             
             # Créer l'agent SQL avec le prompt personnalisé
             agent = create_sql_agent(
@@ -194,9 +229,6 @@ N'hésitez pas à croiser les données pour fournir des analyses pertinentes.
         thinking_states = {
             'start': "Initialisation de l'analyse",
             'understanding': "Compréhension de votre question",
-            'analyzing_1': "Analyse des données médicales - Phase 1",
-            'analyzing_2': "Analyse des données médicales - Phase 2",
-            'analyzing_3': "Analyse des données médicales - Phase 3",
             'processing': "Traitement des informations hospitalières",
             'querying': "Extraction des données pertinentes",
             'calculating': "Calcul des statistiques médicales",
@@ -204,28 +236,10 @@ N'hésitez pas à croiser les données pour fournir des analyses pertinentes.
             'formatting': "Formulation de la réponse"
         }
         
-        # HTML pour l'animation de chargement
-        loading_html = """
-            <div style="display: flex; justify-content: center; align-items: center; flex-direction: column; margin: 20px 0;">
-                <div style="width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-                <style>
-                    @keyframes spin {
-                        0% { transform: rotate(0deg); }
-                        100% { transform: rotate(360deg); }
-                    }
-                </style>
-            </div>
-        """
+        lottie_url = "https://lottie.host/e4d1342b-0eb1-4182-9379-5859487f040d/b9l2rzI7Nh.json"
         
-        status_html = f"""
-            <div style="text-align: center; padding: 10px; margin: 10px; background-color: #f8f9fa; border-radius: 10px;">
-                <h3 style="color: #3498db; margin-bottom: 10px;">{thinking_states.get(step, "Analyse en cours...")}</h3>
-                {loading_html}
-            </div>
-        """
-        
-        placeholder.markdown(status_html, unsafe_allow_html=True)
-        time.sleep(0.3)  # Réduit le délai à 0.3 secondes pour une progression plus rapide
+        with placeholder:
+            st_lottie(lottie_url, height=300)
 
     def get_contextual_suggestions(user_input):
 
@@ -279,42 +293,10 @@ N'hésitez pas à croiser les données pour fournir des analyses pertinentes.
                     message_placeholder = st.empty()
                     
                     try:
-                        # Étape 1: Début de la réflexion
-                        update_thinking_status(message_placeholder, 'start')
-                        time.sleep(0.2)
-                        
-                        # Étape 2: Compréhension de la question
-                        update_thinking_status(message_placeholder, 'understanding')
-                        time.sleep(0.2)
 
-                        # Étape 3: Analyse de la question
-                        update_thinking_status(message_placeholder, 'analyzing_1')
-                        time.sleep(0.2)
-                        update_thinking_status(message_placeholder, 'analyzing_2')
-                        time.sleep(0.2)
-                        update_thinking_status(message_placeholder, 'analyzing_3')
-                        
-                        response = st.session_state.agent.invoke(prompt)
-                        
-                        # Étape 4: Traitement des informations
-                        update_thinking_status(message_placeholder, 'processing')
-                        time.sleep(0.2)
-
-                        # Étape 5: Requête et extraction des données
-                        update_thinking_status(message_placeholder, 'querying')
-                        time.sleep(0.2)
-
-                        # Étape 6: Calcul des statistiques
-                        update_thinking_status(message_placeholder, 'calculating')
-                        time.sleep(0.2)
-
-                        # Étape 7: Validation des résultats
                         update_thinking_status(message_placeholder, 'validating')
-                        time.sleep(0.2)
+                        response = st.session_state.agent.invoke(prompt)
 
-                        # Étape 8: Formatage de la réponse
-                        update_thinking_status(message_placeholder, 'formatting')
-                        time.sleep(0.2)
 
                         final_response = response.get('output', "Je n'ai pas pu générer une réponse.")
                         message_placeholder.markdown(final_response)
@@ -347,33 +329,7 @@ N'hésitez pas à croiser les données pour fournir des analyses pertinentes.
                                 with st.chat_message("assistant"):
                                     message_placeholder = st.empty()
                                     try:
-                                        update_thinking_status(message_placeholder, 'start')
-                                        time.sleep(0.2)
-                                        update_thinking_status(message_placeholder, 'understanding')
-                                        time.sleep(0.2)
-
-                                        update_thinking_status(message_placeholder, 'analyzing_1')
-                                        time.sleep(0.2)
-                                        update_thinking_status(message_placeholder, 'analyzing_2')
-                                        time.sleep(0.2)
-                                        update_thinking_status(message_placeholder, 'analyzing_3')
-                                        
-                                        response = st.session_state.agent.invoke(suggestion)
-                                        
-                                        update_thinking_status(message_placeholder, 'processing')
-                                        time.sleep(0.2)
-
-                                        update_thinking_status(message_placeholder, 'querying')
-                                        time.sleep(0.2)
-
-                                        update_thinking_status(message_placeholder, 'calculating')
-                                        time.sleep(0.2)
-
-                                        update_thinking_status(message_placeholder, 'validating')
-                                        time.sleep(0.2)
-
-                                        update_thinking_status(message_placeholder, 'formatting')
-                                        time.sleep(0.2)
+                                        response = st.session_state.agent.invoke(prompt)
 
                                         final_response = response.get('output', "Je n'ai pas pu générer une réponse.")
                                         message_placeholder.markdown(final_response)
