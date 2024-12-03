@@ -691,7 +691,7 @@ if df_nbr_hospi is not None:
             labels={'nbr_hospi': 'Nombre d\'hospitalisations',
                    'AVG_duree_hospi': 'Durée moyenne de séjour (jours)',
                    'nom_pathologie': 'Pathologie'},
-            size='nbr_hospi',
+            size=combined_data['nbr_hospi'].values,
             size_max=40,
             color='AVG_duree_hospi',
             color_continuous_scale='Viridis',
