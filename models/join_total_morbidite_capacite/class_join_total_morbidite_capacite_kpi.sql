@@ -77,12 +77,15 @@ SELECT
     IFNULL(CAST(evolution_percent_sejour_hospi_partielle AS FLOAT64), 0) AS evolution_percent_sejour_hospi_partielle,
     IFNULL(CAST(evolution_passage_urgence AS FLOAT64), 0) AS evolution_passage_urgence,
     IFNULL(CAST(evolution_percent_passage_urgence AS FLOAT64), 0) AS evolution_percent_passage_urgence,
-    ROUND(safe_divide((nbr_hospi * AVG_duree_hospi) , (journee_hospi_complete + sejour_hospi_partielle)),2) as taux_occupation
+    ROUND(safe_divide((nbr_hospi * AVG_duree_hospi) , (journee_hospi_complete + sejour_hospi_partielle)),2) as taux_occupation,
+    ROUND(safe_divide((lit_hospi_complete + place_hospi_partielle), population)*1000,2) as taux_equipement
+
 FROM {{ref("class_join_total_morbidite_capacite")}}
 ),
 base_data as (
     SELECT *
     ,AVG(taux_occupation) OVER (PARTITION BY annee, region, classification) AS taux_occupation1
+    ,AVG(taux_equipement) OVER (PARTITION BY annee, region, classification) AS taux_equipement1
     FROM nullval
 )
     SELECT 
@@ -92,6 +95,11 @@ base_data as (
             WHEN COALESCE(bd2.taux_occupation1, 0) = 0 THEN NULL 
             ELSE Round(safe_divide((bd1.taux_occupation1 - bd2.taux_occupation1) , bd2.taux_occupation1), 2)  
         END AS evolution_percent_taux_occupation1,
+        round(bd1.taux_equipement1 - COALESCE(bd2.taux_equipement1, 0),2) AS evolution_taux_equipement1,
+        CASE 
+            WHEN COALESCE(bd2.taux_equipement1, 0) = 0 THEN NULL 
+            ELSE Round(safe_divide((bd1.taux_equipement1 - bd2.taux_equipement1) , bd2.taux_equipement1), 2)  
+        END AS evolution_percent_taux_equipement1,
     FROM base_data bd1
     LEFT JOIN base_data bd2 
         ON bd1.region = bd2.region

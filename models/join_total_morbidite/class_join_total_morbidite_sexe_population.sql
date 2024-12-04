@@ -15,6 +15,23 @@ WITH mega_join AS (
         ,t1.evolution_nbr_hospi1 as evolution_nbr_hospi
         ,t1.evolution_percent_nbr_hospi1 as evolution_percent_nbr_hospi
         
+        ,t2.hospi_prog_24h
+        ,t2.hospi_autres_24h
+        ,t2.hospi_total_24h
+        ,t2.hospi_1J
+        ,t2.hospi_2J
+        ,t2.hospi_3J
+        ,t2.hospi_4J
+        ,t2.hospi_5J
+        ,t2.hospi_6J
+        ,t2.hospi_7J
+        ,t2.hospi_8J
+        ,t2.hospi_9J
+        ,t2.hospi_10J_19J
+        ,t2.hospi_20J_29J
+        ,t2.hospi_30J
+        ,t2.hospi_total_jj
+        ,t2.total_hospi
         ,t2.AVG_duree_hospi
         ,t2.evolution_hospi_total_24h1 as evolution_hospi_total_24h
         ,t2.evolution_percent_hospi_total_24h1 as evolution_percent_hospi_total_24h
