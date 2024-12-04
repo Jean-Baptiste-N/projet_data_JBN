@@ -974,7 +974,7 @@ if df is not None:
             # Créer le graphique avec Plotly Express
             fig_equip = px.bar(df_equip, 
                 x='annee',
-                y=['lit_hospi_complete', 'place_hospi_partielle'],
+                y=['lit_hospi_complete'],
                 title="Répartition des lits et places d'hospitalisation disponibles",
                 barmode='stack',
                 labels={
