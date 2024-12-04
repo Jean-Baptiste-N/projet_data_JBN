@@ -77,8 +77,19 @@ SELECT
     IFNULL(CAST(evolution_percent_sejour_hospi_partielle AS FLOAT64), 0) AS evolution_percent_sejour_hospi_partielle,
     IFNULL(CAST(evolution_passage_urgence AS FLOAT64), 0) AS evolution_passage_urgence,
     IFNULL(CAST(evolution_percent_passage_urgence AS FLOAT64), 0) AS evolution_percent_passage_urgence,
-    ROUND(safe_divide((nbr_hospi * AVG_duree_hospi) , (journee_hospi_complete + sejour_hospi_partielle)),2) as taux_occupation,
-    ROUND(safe_divide((lit_hospi_complete + place_hospi_partielle), population)*1000,2) as taux_equipement
+    ROUND(
+        CASE 
+            WHEN COALESCE(journee_hospi_complete + sejour_hospi_partielle, 0) = 0 THEN 0 
+            ELSE (nbr_hospi * AVG_duree_hospi) / (journee_hospi_complete + sejour_hospi_partielle)
+        END, 2
+    ) AS taux_occupation,
+
+    ROUND(
+        CASE 
+            WHEN COALESCE(population, 0) = 0 THEN 0 
+            ELSE (lit_hospi_complete + COALESCE(place_hospi_partielle, 0)) / population * 1000
+        END, 2
+    ) AS taux_equipement
 
 FROM {{ref("class_join_total_morbidite_capacite")}}
 ),
