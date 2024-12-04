@@ -593,7 +593,9 @@ if df is not None:
             st.plotly_chart(fig, use_container_width=True)
         with col_help:
             st.metric(label="help", value="", help="Ce graphique 3D montre la distribution des hospitalisations par pathologie, durée moyenne de séjour et indice comparatif. Utilisez les contrôles pour faire pivoter et zoomer sur le graphique.")
+        
         st.markdown("---")
+
         # Tableau récapitulatif détaillé
         st.subheader("Évolution des pathologies - Augmentation les plus importantes (2018-2022)")
         
