@@ -707,8 +707,8 @@ if df is not None:
                 taux_occ = df_capacity['taux_occupation'].iloc[0]
                 st.metric("Taux d'occupation", f"{taux_occ*100:.1f}%")
             with col4:
-                total_urgences = df_capacity['passage_urgence'].sum()
-                st.metric("Passages aux urgences", format_number(total_urgences))
+                taux_equip = df_capacity['taux_equipement'].iloc[0]
+                st.metric("Taux d'équipement", f"{taux_equip} lits pour 1000 Habitants")
 
             # Calculer le nombre total d'hospitalisations par département
             total_hospi_by_dept = df_capacity.groupby('nom_region').agg({
@@ -775,7 +775,7 @@ if df is not None:
                 hover_name='nom_region',
                 text='nom_region',
                 size_max=50,
-                color_continuous_scale='Ice',
+                color_continuous_scale='Rainbow',
                 labels={
                     'value': 'Nombre',
                     'variable': 'Type',
@@ -881,7 +881,7 @@ if df is not None:
                 'hospi_30J': 'sum',
                 'lit_hospi_complete': 'sum',
                 'journee_hospi_complete': 'sum',
-                'taux_occupation': 'first'
+                'taux_occupation': 'mean'
             }).reset_index()
 
             # Regrouper les hospitalisations de 1-9 jours
@@ -963,6 +963,78 @@ if df is not None:
                          "(24h, 1-9 jours, 10-19 jours, 20 jours et plus). "
                          "La ligne rouge indique le taux d'occupation des lits, permettant d'analyser "
                          "la relation entre la durée des séjours et l'utilisation des capacités."
+                )
+            # Préparer les données pour le graphique de répartition par lits
+            df_equip = df_capacity_filtered.groupby('annee').agg({
+                'lit_hospi_complete': 'sum',
+                'place_hospi_partielle': 'sum',
+                'taux_equipement': 'mean'
+            }).reset_index()
+    
+            # Créer le graphique avec Plotly Express
+            fig_equip = px.bar(df_equip, 
+                x='annee',
+                y=['lit_hospi_complete', 'place_hospi_partielle'],
+                title="Répartition des lits et places d'hospitalisation disponibles",
+                barmode='stack',
+                labels={
+                    'value': 'Nombre de lits et places',
+                    'variable': 'Nombre',
+                    'annee': 'Année',
+                    'lit_hospi_complete': '1 jour et plus',
+                    'place_hospi_partielle': '24 h',
+                },
+                color_discrete_map={
+                    'lit_hospi_complete': '#6fffe9',
+                    'place_hospi_partielle': '#5bc0be',
+                }
+            )
+
+            # Ajouter la ligne de taux d'équipement 
+            fig_equip.add_scatter(
+                x=df_equip['annee'],
+                y=df_equip['taux_equipement'],
+                name="Taux d'équipement",
+                mode='lines+markers+text',
+                text=df_equip['taux_equipement'].apply(lambda x: f"{x:.1f}"),
+                textposition="top center",
+                line=dict(color='orange', width=2),
+                yaxis='y2'
+            )
+
+            # Mise à jour du layout
+            fig_equip.update_layout(
+                yaxis2=dict(
+                    title="Taux d'équipement pour 1000 Habitants",
+                    overlaying='y',
+                    side='right',
+                    showgrid=False,
+                    range=[0, 8],  # Ajuster l'échelle de 0 à 8
+                ),
+                height=500,
+                legend=dict(
+                    orientation="h",  # Légende horizontale
+                    yanchor="bottom",
+                    y=1.35,  # Position plus haute
+                    xanchor="right",
+                    x=1,
+                    title=dict(text="Capacité")  # Ajout d'un titre à la légende
+                ),
+                margin=dict(t=150, b=100, l=50, r=50)  # Augmentation de la marge supérieure
+            )
+
+            # Affichage du graphique avec une colonne d'aide
+            col_chart4, col_help4 = st.columns([1, 0.01])
+            with col_chart4:
+                st.plotly_chart(fig_equip, use_container_width=True)
+            with col_help4:
+                st.metric(
+                    label="help",
+                    value="",
+                    help="Ce graphique montre la répartition des lits et places disponibles "
+                         "pour une prise en charge médicale, en nombre. "
+                         "La ligne orange indique le taux d'équipement des lits, en nombre pour 1000 habitants, "
+                         "permettant d'analyser la capacité moyenne disponible dans une zone donnée."
                 )
 
     with tab3:
