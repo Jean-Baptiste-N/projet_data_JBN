@@ -844,7 +844,7 @@ if df is not None:
             # Formater les axes
             fig4.update_xaxes(
                 tickformat=",",
-                range=[-100, 4000]  # Plage plus large pour l'axe X
+                range=[0, 3000]  # Plage plus large pour l'axe X
             )
             fig4.update_yaxes(
                 tickformat=".1f",

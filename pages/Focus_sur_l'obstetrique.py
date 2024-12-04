@@ -608,85 +608,85 @@ if df is not None:
             evolution = ((next_data - current_data) / current_data * 100).fillna(0)
             evolutions_by_year[f'{current_year}-{next_year}'] = evolution
             
-    # Créer le DataFrame de base avec le nombre total d'hospitalisations
-    df_summary = df_filtered.groupby('nom_pathologie')['nbr_hospi'].sum().reset_index()
-    
-    # Ajouter les évolutions année par année
-    for period, evolution in evolutions_by_year.items():
+        # Créer le DataFrame de base avec le nombre total d'hospitalisations
+        df_summary = df_filtered.groupby('nom_pathologie')['nbr_hospi'].sum().reset_index()
+        
+        # Ajouter les évolutions année par année
+        for period, evolution in evolutions_by_year.items():
+            df_summary = df_summary.merge(
+                evolution.reset_index().rename(columns={'nbr_hospi': f'Evolution_{period}'}),
+                on='nom_pathologie',
+                how='left'
+            )
+        
+        # Calculer l'évolution globale (2018-2022)
+        hospi_2018 = df_filtered[df_filtered['annee'] == min(years)].groupby('nom_pathologie')['nbr_hospi'].sum()
+        hospi_2022 = df_filtered[df_filtered['annee'] == max(years)].groupby('nom_pathologie')['nbr_hospi'].sum()
+        evolution_globale = ((hospi_2022 - hospi_2018) / hospi_2018 * 100).fillna(0)
+        
+        # Ajouter l'évolution globale au DataFrame
         df_summary = df_summary.merge(
-            evolution.reset_index().rename(columns={'nbr_hospi': f'Evolution_{period}'}),
+            evolution_globale.reset_index().rename(columns={'nbr_hospi': 'Evolution_globale'}),
             on='nom_pathologie',
             how='left'
         )
-    
-    # Calculer l'évolution globale (2018-2022)
-    hospi_2018 = df_filtered[df_filtered['annee'] == min(years)].groupby('nom_pathologie')['nbr_hospi'].sum()
-    hospi_2022 = df_filtered[df_filtered['annee'] == max(years)].groupby('nom_pathologie')['nbr_hospi'].sum()
-    evolution_globale = ((hospi_2022 - hospi_2018) / hospi_2018 * 100).fillna(0)
-    
-    # Ajouter l'évolution globale au DataFrame
-    df_summary = df_summary.merge(
-        evolution_globale.reset_index().rename(columns={'nbr_hospi': 'Evolution_globale'}),
-        on='nom_pathologie',
-        how='left'
-    )
-    
-    # Trier par évolution globale décroissante
-    df_summary = df_summary.sort_values('Evolution_globale', ascending=False)
-    
-    # Renommer les colonnes pour l'affichage
-    df_summary.columns = ['Pathologie', 'Hospitalisations'] + [f'Évol. {period} (%)' for period in evolutions_by_year.keys()] + ['Évol. globale (%)']
-    
-    # Colonnes d'évolution pour le gradient
-    evolution_columns = [col for col in df_summary.columns if 'Évol.' in col]
+        
+        # Trier par évolution globale décroissante
+        df_summary = df_summary.sort_values('Evolution_globale', ascending=False)
+        
+        # Renommer les colonnes pour l'affichage
+        df_summary.columns = ['Pathologie', 'Hospitalisations'] + [f'Évol. {period} (%)' for period in evolutions_by_year.keys()] + ['Évol. globale (%)']
+        
+        # Colonnes d'évolution pour le gradient
+        evolution_columns = [col for col in df_summary.columns if 'Évol.' in col]
 
-    # Filtrer les NaN avant de calculer min et max
-    evolution_values = df_summary[evolution_columns].values.flatten()
-    evolution_values = evolution_values[~pd.isna(evolution_values)]  # Supprime les NaN
-    vmin, vmax = evolution_values.min(), evolution_values.max()
+        # Filtrer les NaN avant de calculer min et max
+        evolution_values = df_summary[evolution_columns].values.flatten()
+        evolution_values = evolution_values[~pd.isna(evolution_values)]  # Supprime les NaN
+        vmin, vmax = evolution_values.min(), evolution_values.max()
 
-    # Formater et afficher le tableau
-    st.dataframe(
-        df_summary.style.format({
-            'Hospitalisations': '{:,.0f}',
-            **{col: '{:+.1f}%' for col in evolution_columns}
-        }).background_gradient(
-            cmap='RdYlGn_r',
-            subset=evolution_columns,
-            vmin=vmin,
-            vmax=vmax
-        ),
-        use_container_width=True
-    )
-    
-    st.markdown("---")
-    
-    # Deuxième tableau avec les baisses en premier
-    st.subheader("Évolution des pathologies - Baisses les plus importantes (2018-2022)")
-    
-    # Utiliser le même DataFrame mais trié dans l'ordre inverse
-    df_summary_desc = df_summary.sort_values('Évol. globale (%)', ascending=True)
-    
-    # Filtrer les NaN avant de calculer min et max
-    evolution_values_desc = df_summary_desc[evolution_columns].values.flatten()
-    evolution_values_desc = evolution_values_desc[~pd.isna(evolution_values_desc)]  # Supprime les NaN
-    vmin_desc, vmax_desc = evolution_values_desc.min(), evolution_values_desc.max()
+        # Formater et afficher le tableau
+        st.dataframe(
+            df_summary.style.format({
+                'Hospitalisations': '{:,.0f}',
+                **{col: '{:+.1f}%' for col in evolution_columns}
+            }).background_gradient(
+                cmap='RdYlGn_r',
+                subset=evolution_columns,
+                vmin=vmin,
+                vmax=vmax
+            ),
+            use_container_width=True
+        )
+        
+        st.markdown("---")
+        
+        # Deuxième tableau avec les baisses en premier
+        st.subheader("Évolution des pathologies - Baisses les plus importantes (2018-2022)")
+        
+        # Utiliser le même DataFrame mais trié dans l'ordre inverse
+        df_summary_desc = df_summary.sort_values('Évol. globale (%)', ascending=True)
+        
+        # Filtrer les NaN avant de calculer min et max
+        evolution_values_desc = df_summary_desc[evolution_columns].values.flatten()
+        evolution_values_desc = evolution_values_desc[~pd.isna(evolution_values_desc)]  # Supprime les NaN
+        vmin_desc, vmax_desc = evolution_values_desc.min(), evolution_values_desc.max()
 
-    # Afficher le deuxième tableau
-    st.dataframe(
-        df_summary_desc.style.format({
-            'Hospitalisations': '{:,.0f}',
-            **{col: '{:+.1f}%' for col in evolution_columns}
-        }).background_gradient(
-            cmap='RdYlGn_r',
-            subset=evolution_columns,
-            vmin=vmin_desc,
-            vmax=vmax_desc
-        ),
-        use_container_width=True
-    )        
-    st.markdown("---")
-    st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")
+        # Afficher le deuxième tableau
+        st.dataframe(
+            df_summary_desc.style.format({
+                'Hospitalisations': '{:,.0f}',
+                **{col: '{:+.1f}%' for col in evolution_columns}
+            }).background_gradient(
+                cmap='RdYlGn_r',
+                subset=evolution_columns,
+                vmin=vmin_desc,
+                vmax=vmax_desc
+            ),
+            use_container_width=True
+        )        
+        st.markdown("---")
+        st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")
 
     with tab2:
         
@@ -865,7 +865,7 @@ if df is not None:
             # Formater les axes
             fig4.update_xaxes(
                 tickformat=",",
-                range=[-100, 2000]  # Plage plus large pour l'axe X
+                range=[0, 1500]  # Plage plus large pour l'axe X
             )
             fig4.update_yaxes(
                 tickformat=".1f",
@@ -985,7 +985,7 @@ if df is not None:
                          "La ligne rouge indique le taux d'occupation des lits, permettant d'analyser "
                          "la relation entre la durée des séjours et l'utilisation des capacités."
                 )
-                
+
             # Préparer les données pour le graphique de répartition par lits
             df_equip = df_capacity_filtered.groupby('annee').agg({
                 'lit_hospi_complete': 'sum',
