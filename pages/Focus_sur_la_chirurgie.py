@@ -301,7 +301,7 @@ if df is not None:
                 size=combined_data['nbr_hospi'].tolist(),
                 size_max=40,
                 color='AVG_duree_hospi',
-                color_continuous_scale='Viridis',
+                color_continuous_scale='YlOrRd',
                 range_x=[0, max_hospi_by_year + x_margin],
                 range_y=[0, max_duree_by_year + y_margin]
             )
@@ -321,7 +321,7 @@ if df is not None:
                 size=combined_data['nbr_hospi'].tolist(),
                 size_max=40,
                 color='AVG_duree_hospi',
-                color_continuous_scale='Viridis',
+                color_continuous_scale='YlOrRd',
                 range_x=[0, max_hospi_by_year + x_margin],
                 range_y=[0, max_duree_by_year + y_margin]
             )
@@ -415,7 +415,7 @@ if df is not None:
                     marker=dict(
                         size=[x/current_data['nbr_hospi'].max()*30 for x in current_data['nbr_hospi']],
                         color=current_data['AVG_duree_hospi'].tolist(),
-                        colorscale='Viridis',
+                        colorscale='YlOrRd',
                         opacity=0.8,
                         colorbar=dict(title="Durée moyenne de séjour (jours)")
                     ),
@@ -465,7 +465,7 @@ if df is not None:
                             marker=dict(
                                 size=point_sizes,
                                 color=avg_duree,
-                                colorscale='Viridis',
+                                colorscale='YlOrRd',
                                 opacity=0.8,
                                 colorbar=dict(title="Durée moyenne de séjour (jours)")
                             ),
@@ -644,15 +644,22 @@ if df is not None:
         
         # Colonnes d'évolution pour le gradient
         evolution_columns = [col for col in df_summary.columns if 'Évol.' in col]
-        
+
+        # Filtrer les NaN avant de calculer min et max
+        evolution_values = df_summary[evolution_columns].values.flatten()
+        evolution_values = evolution_values[~pd.isna(evolution_values)]  # Supprime les NaN
+        vmin, vmax = evolution_values.min(), evolution_values.max()
+
         # Formater et afficher le tableau
         st.dataframe(
             df_summary.style.format({
                 'Hospitalisations': '{:,.0f}',
                 **{col: '{:+.1f}%' for col in evolution_columns}
             }).background_gradient(
+                cmap='RdYlGn_r',
                 subset=evolution_columns,
-                cmap='RdYlBu_r'
+                vmin=vmin,
+                vmax=vmax
             ),
             use_container_width=True
         )
@@ -665,21 +672,27 @@ if df is not None:
         # Utiliser le même DataFrame mais trié dans l'ordre inverse
         df_summary_desc = df_summary.sort_values('Évol. globale (%)', ascending=True)
         
+        # Filtrer les NaN avant de calculer min et max
+        evolution_values_desc = df_summary_desc[evolution_columns].values.flatten()
+        evolution_values_desc = evolution_values_desc[~pd.isna(evolution_values_desc)]  # Supprime les NaN
+        vmin_desc, vmax_desc = evolution_values_desc.min(), evolution_values_desc.max()
+
         # Afficher le deuxième tableau
         st.dataframe(
             df_summary_desc.style.format({
                 'Hospitalisations': '{:,.0f}',
                 **{col: '{:+.1f}%' for col in evolution_columns}
             }).background_gradient(
+                cmap='RdYlGn_r',
                 subset=evolution_columns,
-                cmap='RdYlBu_r'
+                vmin=vmin_desc,
+                vmax=vmax_desc
             ),
             use_container_width=True
-        )
-        
+        )        
     st.markdown("---")
     st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")
-
+    
     with tab2:
         
         # Requête pour les données de capacité
@@ -788,7 +801,7 @@ if df is not None:
                 hover_name='nom_region',
                 text='nom_region',
                 size_max=50,
-                color_continuous_scale='Viridis',
+                color_continuous_scale='YlOrRd',
                 labels={
                     'value': 'Nombre',
                     'variable': 'Type',

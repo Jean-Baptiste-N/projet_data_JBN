@@ -79,7 +79,7 @@ def format_number(number):
 
 if df is not None:
     # Filtres principaux en colonnes
-    col1, col2 = st.columns(2)
+    col1, col2, col3= st.columns(3)
 
     with col1:
         # Sélection du sexe
@@ -89,7 +89,7 @@ if df is not None:
             key="selecteur_sexe_obs"
         )
 
-    with col3:
+    with col2:
         # Filtre années avec une liste déroulante simple
         years = sorted(df['annee'].unique(), reverse=True)
         years_options = ["Toutes les années"] + [str(year) for year in years]
@@ -119,56 +119,73 @@ if df is not None:
     # Filtre par année
     if selected_year != "Toutes les années":
         df_filtered = df_filtered[df_filtered['annee'] == int(selected_year)]
+        
+    # Filtre par départements
+    if selected_region != "Tous les départements":
+        df_filtered = df_filtered[df_filtered['nom_region'] == selected_region]
+        
+    # Liste déroulante de toutes les pathologies
+    all_pathologies = sorted(df_filtered['nom_pathologie'].unique())
+    all_pathologies.insert(0, "Toutes les pathologies")  # Ajout de l'option pour toutes les pathologies
+    selected_pathology = st.selectbox(
+        "🔍 Sélectionner une pathologie en médecine pour obtenir des détails",
+        all_pathologies,
+        key="pathology_selector_psy"
+    )
+        # Filtre par pathologie
+
+    # Afficher les données pour la pathologie sélectionnée
+    if selected_pathology == "Toutes les pathologies":
+        path_data = df_filtered[
+            (df_filtered['sexe'] == selected_sex)
+        ]
+    else:
+        path_data = df_filtered[
+            (df_filtered['nom_pathologie'] == selected_pathology) &
+            (df_filtered['sexe'] == selected_sex)
+        ]
     
-    tab1, tab2, tab3= st.tabs([
+    # Calcul des métriques avec les filtres appliqués
+    total_hospi = path_data['nbr_hospi'].sum()
+    
+    # Calcul de la durée moyenne en fonction de la sélection
+    if selected_pathology == "Toutes les pathologies":
+        avg_duration = df_filtered[
+            (df_filtered['sexe'] == selected_sex)
+        ]['AVG_duree_hospi'].mean()
+    else:
+        avg_duration = df_filtered[
+            (df_filtered['nom_pathologie'] == selected_pathology) &
+            (df_filtered['sexe'] == selected_sex)
+        ]['AVG_duree_hospi'].mean()
+    
+    col1, col2, col3, col4, col5 = st.columns(5)
+    with col1:
+        st.metric("Total d'hospitalisations", format_number(total_hospi))
+    with col2:
+        st.metric("Durée moyenne", f"{avg_duration:.1f} jours")
+    with col3:
+        st.metric("Indice comparatif", f"{path_data['indice_comparatif_tt_age_percent'].mean():.1f}%")
+    with col4:
+        hospi_24h = path_data['hospi_total_24h'].sum()
+        percentage_24h = (hospi_24h / total_hospi * 100) if total_hospi > 0 else 0
+        st.metric("Hospitalisations < 24h", f"{percentage_24h:.1f}%")
+    with col5:
+        # Sélectionner toutes les colonnes tranche_age_*
+        age_columns = [col for col in path_data.columns if col.startswith('tranche_age_')]
+        # Calculer la somme pour chaque tranche d'âge
+        age_sums = path_data[age_columns].sum()
+        # Trouver la tranche d'âge avec la plus grande valeur
+        most_common_age = age_sums.idxmax().replace('tranche_age_', '')
+        st.metric("Tranche d'âge majoritaire", most_common_age)
+    
+    tab1, tab2, tab3 = st.tabs([
         "📈 Analyse par pathologies",
         "🗺️ Analyse par capacité",
-        "🏥 Analyse démographique",
-
+        "📊 Analyse démographique",
     ])
 
     with tab1:
-
-        # Liste déroulante de toutes les pathologies
-        all_pathologies = sorted(df_filtered['nom_pathologie'].unique())
-        all_pathologies.insert(0, "Toutes les pathologies")  # Ajout de l'option pour toutes les pathologies
-        selected_pathology = st.selectbox(
-            "🔍 Sélectionner une pathologie en médecine pour obtenir des détails",
-            all_pathologies,
-            key="pathology_selector_psy"
-        )
-        
-        # Afficher les données pour la pathologie sélectionnée
-        if selected_pathology == "Toutes les pathologies":
-            path_data = df_filtered  # Utiliser toutes les données
-        else:
-            path_data = df_filtered[df_filtered['nom_pathologie'] == selected_pathology]
-            
-        total_hospi = path_data['nbr_hospi'].sum()
-        avg_duration = path_data['AVG_duree_hospi'].mean()
-        
-        col1, col2, col3, col4, col5 = st.columns(5)
-        with col1:
-            st.metric("Total d'hospitalisations", f"{total_hospi/1_000:,.2f}K")
-        with col2:
-            st.metric("Durée moyenne", f"{avg_duration:.1f} jours")
-        with col3:
-            st.metric("Indice comparatif", f"{path_data['indice_comparatif_tt_age_percent'].mean():.1f}%")
-        with col4:
-            hospi_24h = path_data['evolution_hospi_total_24h'].sum()
-            st.metric("Hospitalisations < 24h", f"{hospi_24h/1_000:,.2f}K")
-        with col5:
-            # Sélectionner toutes les colonnes tranche_age_*
-            age_columns = [col for col in path_data.columns if col.startswith('tranche_age_')]
-            # Calculer la somme pour chaque tranche d'âge
-            age_sums = path_data[age_columns].sum()
-            # Trouver la tranche d'âge avec la plus grande valeur
-            most_common_age = age_sums.idxmax().replace('tranche_age_', '')
-            st.metric("Tranche d'âge majoritaire", most_common_age)
-
-        
-        st.divider()
-
         # Ajout d'un sélecteur pour filtrer le nombre de pathologies à afficher
         n_pathologies = st.slider("Nombre de pathologies à afficher", 5, 14, 7)
         
@@ -219,7 +236,7 @@ if df is not None:
                 text='Pathologies médicales : Hospitalisations et durée moyenne de séjour',
                 y=0.95,
                 x=0.5,
-                xanchor='center',
+                xanchor='right',
                 yanchor='top'
             ),
             height=500,
@@ -257,26 +274,62 @@ if df is not None:
         top_pathologies = df_nbr_hospi.groupby('nom_pathologie')['nbr_hospi'].sum().nlargest(n_pathologies).index
         combined_data = combined_data[combined_data['nom_pathologie'].isin(top_pathologies)]
 
-        # Création du scatter plot avec animation
-        fig = px.scatter(
-            combined_data,
-            x='nbr_hospi',
-            y='AVG_duree_hospi',
-            text='nom_pathologie',
-            animation_frame=combined_data['annee'].astype(int),
-            animation_group='nom_pathologie',
-            title=f'Relation entre nombre d\'hospitalisations et durée moyenne de séjour',
-            labels={'nbr_hospi': 'Nombre d\'hospitalisations',
-                'AVG_duree_hospi': 'Durée moyenne de séjour (jours)',
-                'nom_pathologie': 'Pathologie'},
-            size='nbr_hospi',
-            size_max=40,
-            color='AVG_duree_hospi',
-            color_continuous_scale='Viridis',
-            range_x=[0.1, combined_data['nbr_hospi'].max() * 1.1],
-            range_y=[0.5, combined_data['AVG_duree_hospi'].max() * 1.1]
-        )
+        # Calcul des marges pour les axes en prenant en compte les maximums par année
+        max_hospi_by_year = combined_data.groupby('annee')['nbr_hospi'].max().max()
+        max_duree_by_year = combined_data.groupby('annee')['AVG_duree_hospi'].max().max()
+        
+        x_margin = max_hospi_by_year * 0.2  # Augmentation de la marge à 20%
+        y_margin = max_duree_by_year * 0.2  # Augmentation de la marge à 20%
 
+        # Création du scatter plot avec animation
+        if selected_year != "Toutes les années":
+            # Si une année spécifique est sélectionnée, créer un scatter plot statique
+            fig = px.scatter(
+                combined_data,
+                x='nbr_hospi',
+                y='AVG_duree_hospi',
+                text='nom_pathologie',
+                title=f'Relation entre nombre d\'hospitalisations et durée moyenne de séjour ({selected_year})',
+                labels={'nbr_hospi': 'Nombre d\'hospitalisations',
+                    'AVG_duree_hospi': 'Durée moyenne de séjour (jours)',
+                    'nom_pathologie': 'Pathologie'},
+                size=combined_data['nbr_hospi'].tolist(),
+                size_max=40,
+                color='AVG_duree_hospi',
+                color_continuous_scale='Burgyl',
+                range_x=[0, max_hospi_by_year + x_margin],
+                range_y=[0, max_duree_by_year + y_margin]
+            )
+        else:
+            # Si toutes les années sont sélectionnées, créer le scatter plot animé
+            fig = px.scatter(
+                combined_data,
+                x='nbr_hospi',
+                y='AVG_duree_hospi',
+                text='nom_pathologie',
+                animation_frame='annee',
+                animation_group='nom_pathologie',
+                title=f'Relation entre nombre d\'hospitalisations et durée moyenne de séjour',
+                labels={'nbr_hospi': 'Nombre d\'hospitalisations',
+                    'AVG_duree_hospi': 'Durée moyenne de séjour (jours)',
+                    'nom_pathologie': 'Pathologie'},
+                size=combined_data['nbr_hospi'].tolist(),
+                size_max=40,
+                color='AVG_duree_hospi',
+                color_continuous_scale='Burgyl',
+                range_x=[0, max_hospi_by_year + x_margin],
+                range_y=[0, max_duree_by_year + y_margin]
+            )
+            
+            # Configuration de l'animation
+            if hasattr(fig, 'layout') and hasattr(fig.layout, 'updatemenus'):
+                try:
+                    fig.layout.sliders[0].x = 0.1
+                    fig.layout.updatemenus[0].buttons[0].args[1]['frame']['duration'] = 1500
+                    fig.layout.updatemenus[0].buttons[0].args[1]['transition']['duration'] = 500
+                except (IndexError, KeyError, AttributeError):
+                    pass  # Ignorer les erreurs si la configuration de l'animation échoue
+                    
         # Personnalisation du graphique
         fig.update_traces(
             textposition='top center',
@@ -304,10 +357,7 @@ if df is not None:
             ]
         )
 
-        # Configuration de l'animation
-        fig.layout.updatemenus[0].buttons[0].args[1]["frame"]["duration"] = 1500
-        fig.layout.updatemenus[0].buttons[0].args[1]["transition"]["duration"] = 500
-        
+        # Affichage du graphique avec une colonne d'aide
         col_chart, col_help = st.columns([1, 0.01])
         with col_chart:
             st.plotly_chart(fig, use_container_width=True)
@@ -360,7 +410,7 @@ if df is not None:
                     marker=dict(
                         size=[x/current_data['nbr_hospi'].max()*30 for x in current_data['nbr_hospi']],
                         color=current_data['AVG_duree_hospi'].tolist(),
-                        colorscale='burgyl',
+                        colorscale='Burgyl',
                         opacity=0.8,
                         colorbar=dict(title="Durée moyenne de séjour (jours)")
                     ),
@@ -410,7 +460,7 @@ if df is not None:
                             marker=dict(
                                 size=point_sizes,
                                 color=avg_duree,
-                                colorscale='burgyl',
+                                colorscale='Burgyl',
                                 opacity=0.8,
                                 colorbar=dict(title="Durée moyenne de séjour (jours)")
                             ),
@@ -532,31 +582,32 @@ if df is not None:
             customdata=combined_data_3d[['nom_pathologie', 'nbr_hospi', 'AVG_duree_hospi', 'indice_comparatif_tt_age_percent']].values,
         )
 
-    col_chart, col_help = st.columns([1, 0.01])
-    with col_chart:
-        st.plotly_chart(fig, use_container_width=True)
-    with col_help:
-        st.metric(label="help", value="", help="Ce graphique 3D montre la distribution des hospitalisations par pathologie, durée moyenne de séjour et indice comparatif. Utilisez les contrôles pour faire pivoter et zoomer sur le graphique.")
-    st.markdown("---")
-    # Tableau récapitulatif détaillé
-    st.subheader("Évolution des pathologies - Augmentation les plus importantes (2018-2022)")
-    
-    # Calculer les évolutions année par année
-    evolutions_by_year = {}
-    years = sorted(df_filtered['annee'].unique())
-    
-    for i in range(len(years)-1):
-        current_year = years[i]
-        next_year = years[i+1]
+        # Affichage du graphique 3D
+        col_chart, col_help = st.columns([1, 0.01])
+        with col_chart:
+            st.plotly_chart(fig, use_container_width=True)
+        with col_help:
+            st.metric(label="help", value="", help="Ce graphique 3D montre la distribution des hospitalisations par pathologie, durée moyenne de séjour et indice comparatif. Utilisez les contrôles pour faire pivoter et zoomer sur le graphique.")
+        st.markdown("---")
+        # Tableau récapitulatif détaillé
+        st.subheader("Évolution des pathologies - Augmentation les plus importantes (2018-2022)")
         
-        # Données pour l'année courante et suivante
-        current_data = df_filtered[df_filtered['annee'] == current_year].groupby('nom_pathologie')['nbr_hospi'].sum()
-        next_data = df_filtered[df_filtered['annee'] == next_year].groupby('nom_pathologie')['nbr_hospi'].sum()
+        # Calculer les évolutions année par année
+        evolutions_by_year = {}
+        years = sorted(df_filtered['annee'].unique())
         
-        # Calculer l'évolution en pourcentage
-        evolution = ((next_data - current_data) / current_data * 100).fillna(0)
-        evolutions_by_year[f'{current_year}-{next_year}'] = evolution
-        
+        for i in range(len(years)-1):
+            current_year = years[i]
+            next_year = years[i+1]
+            
+            # Données pour l'année courante et suivante
+            current_data = df_filtered[df_filtered['annee'] == current_year].groupby('nom_pathologie')['nbr_hospi'].sum()
+            next_data = df_filtered[df_filtered['annee'] == next_year].groupby('nom_pathologie')['nbr_hospi'].sum()
+            
+            # Calculer l'évolution en pourcentage
+            evolution = ((next_data - current_data) / current_data * 100).fillna(0)
+            evolutions_by_year[f'{current_year}-{next_year}'] = evolution
+            
     # Créer le DataFrame de base avec le nombre total d'hospitalisations
     df_summary = df_filtered.groupby('nom_pathologie')['nbr_hospi'].sum().reset_index()
     
@@ -588,15 +639,22 @@ if df is not None:
     
     # Colonnes d'évolution pour le gradient
     evolution_columns = [col for col in df_summary.columns if 'Évol.' in col]
-    
+
+    # Filtrer les NaN avant de calculer min et max
+    evolution_values = df_summary[evolution_columns].values.flatten()
+    evolution_values = evolution_values[~pd.isna(evolution_values)]  # Supprime les NaN
+    vmin, vmax = evolution_values.min(), evolution_values.max()
+
     # Formater et afficher le tableau
     st.dataframe(
         df_summary.style.format({
             'Hospitalisations': '{:,.0f}',
             **{col: '{:+.1f}%' for col in evolution_columns}
         }).background_gradient(
+            cmap='RdYlGn_r',
             subset=evolution_columns,
-            cmap='RdYlBu_r'
+            vmin=vmin,
+            vmax=vmax
         ),
         use_container_width=True
     )
@@ -609,18 +667,24 @@ if df is not None:
     # Utiliser le même DataFrame mais trié dans l'ordre inverse
     df_summary_desc = df_summary.sort_values('Évol. globale (%)', ascending=True)
     
+    # Filtrer les NaN avant de calculer min et max
+    evolution_values_desc = df_summary_desc[evolution_columns].values.flatten()
+    evolution_values_desc = evolution_values_desc[~pd.isna(evolution_values_desc)]  # Supprime les NaN
+    vmin_desc, vmax_desc = evolution_values_desc.min(), evolution_values_desc.max()
+
     # Afficher le deuxième tableau
     st.dataframe(
         df_summary_desc.style.format({
             'Hospitalisations': '{:,.0f}',
             **{col: '{:+.1f}%' for col in evolution_columns}
         }).background_gradient(
+            cmap='RdYlGn_r',
             subset=evolution_columns,
-            cmap='RdYlBu_r'
+            vmin=vmin_desc,
+            vmax=vmax_desc
         ),
         use_container_width=True
-    )
-    
+    )        
     st.markdown("---")
     st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")
 
@@ -732,7 +796,7 @@ if df is not None:
                 hover_name='nom_region',
                 text='nom_region',
                 size_max=50,
-                color_continuous_scale='Viridis',
+                color_continuous_scale='Burgyl',
                 labels={
                     'value': 'Nombre',
                     'variable': 'Type',

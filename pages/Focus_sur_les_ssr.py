@@ -192,7 +192,7 @@ if df is not None:
 
     with tab1:
         # Ajout d'un sélecteur pour filtrer le nombre de pathologies à afficher
-        n_pathologies = st.slider("Nombre de pathologies à afficher", 5, 57, 20)
+        n_pathologies = st.slider("Nombre de pathologies à afficher", 5, 6, 6)
         
         # Top pathologies par nombre d'hospitalisations
         hospi_by_pathology = df_filtered.groupby('nom_pathologie').agg({
@@ -301,7 +301,7 @@ if df is not None:
                 size=combined_data['nbr_hospi'].tolist(),
                 size_max=40,
                 color='AVG_duree_hospi',
-                color_continuous_scale='Viridis',
+                color_continuous_scale='Oryel',
                 range_x=[0, max_hospi_by_year + x_margin],
                 range_y=[0, max_duree_by_year + y_margin]
             )
@@ -321,7 +321,7 @@ if df is not None:
                 size=combined_data['nbr_hospi'].tolist(),
                 size_max=40,
                 color='AVG_duree_hospi',
-                color_continuous_scale='Viridis',
+                color_continuous_scale='Oryel',
                 range_x=[0, max_hospi_by_year + x_margin],
                 range_y=[0, max_duree_by_year + y_margin]
             )
@@ -415,7 +415,7 @@ if df is not None:
                     marker=dict(
                         size=[x/current_data['nbr_hospi'].max()*30 for x in current_data['nbr_hospi']],
                         color=current_data['AVG_duree_hospi'].tolist(),
-                        colorscale='Viridis',
+                        colorscale='Oryel',
                         opacity=0.8,
                         colorbar=dict(title="Durée moyenne de séjour (jours)")
                     ),
@@ -465,7 +465,7 @@ if df is not None:
                             marker=dict(
                                 size=point_sizes,
                                 color=avg_duree,
-                                colorscale='Viridis',
+                                colorscale='Oryel',
                                 opacity=0.8,
                                 colorbar=dict(title="Durée moyenne de séjour (jours)")
                             ),
@@ -595,7 +595,7 @@ if df is not None:
             st.metric(label="help", value="", help="Ce graphique 3D montre la distribution des hospitalisations par pathologie, durée moyenne de séjour et indice comparatif. Utilisez les contrôles pour faire pivoter et zoomer sur le graphique.")
         st.markdown("---")
         # Tableau récapitulatif détaillé
-        st.subheader("Évolution des pathologies - Augmentation les plus importantes (2018-2022)")
+        st.subheader("Évolution des pathologies (2018-2022)")
         
         # Calculer les évolutions année par année
         evolutions_by_year = {}
@@ -644,35 +644,22 @@ if df is not None:
         
         # Colonnes d'évolution pour le gradient
         evolution_columns = [col for col in df_summary.columns if 'Évol.' in col]
-        
+
+        # Filtrer les NaN avant de calculer min et max
+        evolution_values = df_summary[evolution_columns].values.flatten()
+        evolution_values = evolution_values[~pd.isna(evolution_values)]  # Supprime les NaN
+        vmin, vmax = evolution_values.min(), evolution_values.max()
+
         # Formater et afficher le tableau
         st.dataframe(
             df_summary.style.format({
                 'Hospitalisations': '{:,.0f}',
                 **{col: '{:+.1f}%' for col in evolution_columns}
             }).background_gradient(
+                cmap='RdYlGn_r',
                 subset=evolution_columns,
-                cmap='RdYlBu_r'
-            ),
-            use_container_width=True
-        )
-        
-        st.markdown("---")
-        
-        # Deuxième tableau avec les baisses en premier
-        st.subheader("Évolution des pathologies - Baisses les plus importantes (2018-2022)")
-        
-        # Utiliser le même DataFrame mais trié dans l'ordre inverse
-        df_summary_desc = df_summary.sort_values('Évol. globale (%)', ascending=True)
-        
-        # Afficher le deuxième tableau
-        st.dataframe(
-            df_summary_desc.style.format({
-                'Hospitalisations': '{:,.0f}',
-                **{col: '{:+.1f}%' for col in evolution_columns}
-            }).background_gradient(
-                subset=evolution_columns,
-                cmap='RdYlBu_r'
+                vmin=vmin,
+                vmax=vmax
             ),
             use_container_width=True
         )
@@ -788,7 +775,7 @@ if df is not None:
                 hover_name='nom_region',
                 text='nom_region',
                 size_max=50,
-                color_continuous_scale='Viridis',
+                color_continuous_scale='Oryel',
                 labels={
                     'value': 'Nombre',
                     'variable': 'Type',
