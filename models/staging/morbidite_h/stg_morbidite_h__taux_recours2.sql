@@ -2,7 +2,7 @@ with
 
 source as (
 
-    select * from {{ source('morbidite_h', 'taux_recours') }}
+    select * from {{ source('morbidite_h', 'taux_recours2') }}
 
 ),
 
@@ -11,11 +11,14 @@ renamed as (
     select
         niveau,
         sexe,
-        pathologie,
-        code_pathologie,
-        nom_pathologie,
         annee,
+        DATE(CAST(annee AS STRING) || "-12-31") as year,
+        pathologie,
+        SPLIT(pathologie, "-")[SAFE_OFFSET(0)] AS code_pathologie,
+        SPLIT(pathologie, "-")[SAFE_OFFSET(1)] AS nom_pathologie,
         region,
+        SPLIT(region, " - ")[SAFE_OFFSET(0)] AS code_region,
+        SPLIT(region, " - ")[SAFE_OFFSET(1)] AS nom_region,
         tranche_age_0_1,
         tranche_age_1_4,
         tranche_age_5_14,

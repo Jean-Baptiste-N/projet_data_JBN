@@ -33,7 +33,6 @@ renamed as (
         sehem,
         serad,
         sechi,
-        cle_unique
 
     from source
 

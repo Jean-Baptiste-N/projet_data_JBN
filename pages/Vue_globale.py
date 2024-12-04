@@ -83,13 +83,13 @@ def fetch_data():
             'tranche_age_0_1', 'tranche_age_1_4', 'tranche_age_5_14',
             'tranche_age_15_24', 'tranche_age_25_34', 'tranche_age_35_44',
             'tranche_age_45_54', 'tranche_age_55_64', 'tranche_age_65_74',
-            'tranche_age_75_84', 'tranche_age_85_et_plus'
+            'tranche_age_75_84', 'tranche_age_85_et_plus','classification',
         ]].copy()
 
         df_duree_hospi = df_complet[[
             'niveau','year', 'region', 'nom_region', 'pathologie', 'nom_pathologie', 'sexe',
             'AVG_duree_hospi', 'evolution_AVG_duree_hospi', 'evolution_percent_AVG_duree_hospi',
-            'evolution_hospi_total_jj'
+            'evolution_hospi_total_jj','classification',
         ]].copy()
 
         df_tranche_age_hospi = df_complet[[
@@ -99,7 +99,7 @@ def fetch_data():
             'tranche_age_45_54', 'tranche_age_55_64', 'tranche_age_65_74',
             'tranche_age_75_84', 'tranche_age_85_et_plus',
             'tx_brut_tt_age_pour_mille', 'tx_standard_tt_age_pour_mille',
-            'indice_comparatif_tt_age_percent'
+            'indice_comparatif_tt_age_percent','classification'
         ]].copy()
         
         # Charger uniquement les données de capacité
@@ -679,6 +679,9 @@ if df_nbr_hospi is not None:
         top_pathologies = df_nbr_hospi_filtered.groupby('nom_pathologie')['nbr_hospi'].sum().nlargest(n_pathologies).index
         combined_data = combined_data[combined_data['nom_pathologie'].isin(top_pathologies)]
 
+        # Normalisation des valeurs pour la taille des points
+        max_hospi = combined_data['nbr_hospi'].max()
+        combined_data['size'] = (combined_data['nbr_hospi'] / max_hospi * 100).round().astype(int)
         # Création du scatter plot avec animation
         fig = px.scatter(
             combined_data,
@@ -691,7 +694,7 @@ if df_nbr_hospi is not None:
             labels={'nbr_hospi': 'Nombre d\'hospitalisations',
                    'AVG_duree_hospi': 'Durée moyenne de séjour (jours)',
                    'nom_pathologie': 'Pathologie'},
-            size='nbr_hospi',
+            size='size',
             size_max=40,
             color='AVG_duree_hospi',
             color_continuous_scale='Viridis',
