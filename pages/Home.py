@@ -72,7 +72,7 @@ col1, col2, col3 = st.columns(3)
 with col1:
     st.markdown("""
         <div class="feature-card" style="margin-bottom: -80px;">
-        <h3><a href="https://medicalcapacity.streamlit.app/Vue_globale">🎯 Vue générale</a></h3>
+        <h3>🎯 Vue générale</h3>
         <p>Explorez les tendances nationales et régionales des hospitalisations en France</p>
         <ul>
             <li><a href="https://medicalcapacity.streamlit.app/Vue_globale">Tableaux de bord interactifs</a></li>
