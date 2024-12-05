@@ -180,15 +180,6 @@ if df is not None:
     if selected_region != "Tous les départements":
         df_filtered = df_filtered[df_filtered['nom_region'] == selected_region]
         
-    # Liste déroulante de toutes les pathologies
-    all_pathologies = sorted(df_filtered['nom_pathologie'].unique())
-    all_pathologies.insert(0, "Toutes les pathologies")  # Ajout de l'option pour toutes les pathologies
-    selected_pathology = st.selectbox(
-        "🔍 Sélectionner une pathologie en médecine pour obtenir des détails",
-        all_pathologies,
-        key="pathology_selector_psy"
-    )
-        # Filtre par pathologie
 
     # Afficher les données pour la pathologie sélectionnée
     if selected_pathology == "Toutes les pathologies":
