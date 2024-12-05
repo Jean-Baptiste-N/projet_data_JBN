@@ -192,7 +192,7 @@ if df is not None:
 
     with tab1:
         # Ajout d'un sélecteur pour filtrer le nombre de pathologies à afficher
-        n_pathologies = st.slider("Nombre de pathologies à afficher", 5, 57, 20)
+        n_pathologies = st.slider("Nombre de pathologies à afficher", 5, 5, 5)
         
         # Top pathologies par nombre d'hospitalisations
         hospi_by_pathology = df_filtered.groupby('nom_pathologie').agg({
@@ -301,7 +301,7 @@ if df is not None:
                 size=combined_data['nbr_hospi'].tolist(),
                 size_max=40,
                 color='AVG_duree_hospi',
-                color_continuous_scale='Viridis',
+                color_continuous_scale='Ice',
                 range_x=[0, max_hospi_by_year + x_margin],
                 range_y=[0, max_duree_by_year + y_margin]
             )
@@ -321,7 +321,7 @@ if df is not None:
                 size=combined_data['nbr_hospi'].tolist(),
                 size_max=40,
                 color='AVG_duree_hospi',
-                color_continuous_scale='Viridis',
+                color_continuous_scale='Ice',
                 range_x=[0, max_hospi_by_year + x_margin],
                 range_y=[0, max_duree_by_year + y_margin]
             )
@@ -415,7 +415,7 @@ if df is not None:
                     marker=dict(
                         size=[x/current_data['nbr_hospi'].max()*30 for x in current_data['nbr_hospi']],
                         color=current_data['AVG_duree_hospi'].tolist(),
-                        colorscale='Viridis',
+                        colorscale='Ice',
                         opacity=0.8,
                         colorbar=dict(title="Durée moyenne de séjour (jours)")
                     ),
@@ -465,7 +465,7 @@ if df is not None:
                             marker=dict(
                                 size=point_sizes,
                                 color=avg_duree,
-                                colorscale='Viridis',
+                                colorscale='Ice',
                                 opacity=0.8,
                                 colorbar=dict(title="Durée moyenne de séjour (jours)")
                             ),
@@ -595,7 +595,7 @@ if df is not None:
             st.metric(label="help", value="", help="Ce graphique 3D montre la distribution des hospitalisations par pathologie, durée moyenne de séjour et indice comparatif. Utilisez les contrôles pour faire pivoter et zoomer sur le graphique.")
         st.markdown("---")
         # Tableau récapitulatif détaillé
-        st.subheader("Évolution des pathologies - Augmentation les plus importantes (2018-2022)")
+        st.subheader("Évolution des pathologies (2018-2022)")
         
         # Calculer les évolutions année par année
         evolutions_by_year = {}
@@ -644,35 +644,22 @@ if df is not None:
         
         # Colonnes d'évolution pour le gradient
         evolution_columns = [col for col in df_summary.columns if 'Évol.' in col]
-        
+
+        # Filtrer les NaN avant de calculer min et max
+        evolution_values = df_summary[evolution_columns].values.flatten()
+        evolution_values = evolution_values[~pd.isna(evolution_values)]  # Supprime les NaN
+        vmin, vmax = evolution_values.min(), evolution_values.max()
+
         # Formater et afficher le tableau
         st.dataframe(
             df_summary.style.format({
                 'Hospitalisations': '{:,.0f}',
                 **{col: '{:+.1f}%' for col in evolution_columns}
             }).background_gradient(
+                cmap='RdYlGn_r',
                 subset=evolution_columns,
-                cmap='RdYlBu_r'
-            ),
-            use_container_width=True
-        )
-        
-        st.markdown("---")
-        
-        # Deuxième tableau avec les baisses en premier
-        st.subheader("Évolution des pathologies - Baisses les plus importantes (2018-2022)")
-        
-        # Utiliser le même DataFrame mais trié dans l'ordre inverse
-        df_summary_desc = df_summary.sort_values('Évol. globale (%)', ascending=True)
-        
-        # Afficher le deuxième tableau
-        st.dataframe(
-            df_summary_desc.style.format({
-                'Hospitalisations': '{:,.0f}',
-                **{col: '{:+.1f}%' for col in evolution_columns}
-            }).background_gradient(
-                subset=evolution_columns,
-                cmap='RdYlBu_r'
+                vmin=vmin,
+                vmax=vmax
             ),
             use_container_width=True
         )
@@ -720,8 +707,8 @@ if df is not None:
                 taux_occ = df_capacity['taux_occupation'].iloc[0]
                 st.metric("Taux d'occupation", f"{taux_occ*100:.1f}%")
             with col4:
-                total_urgences = df_capacity['passage_urgence'].sum()
-                st.metric("Passages aux urgences", format_number(total_urgences))
+                taux_equip = df_capacity['taux_equipement'].iloc[0]
+                st.metric("Taux d'équipement", f"{taux_equip} lits pour 1000 Habitants")
 
             # Calculer le nombre total d'hospitalisations par département
             total_hospi_by_dept = df_capacity.groupby('nom_region').agg({
@@ -788,7 +775,7 @@ if df is not None:
                 hover_name='nom_region',
                 text='nom_region',
                 size_max=50,
-                color_continuous_scale='Viridis',
+                color_continuous_scale='Rainbow',
                 labels={
                     'value': 'Nombre',
                     'variable': 'Type',
@@ -857,11 +844,11 @@ if df is not None:
             # Formater les axes
             fig4.update_xaxes(
                 tickformat=",",
-                range=[-5000, 1000]  # Plage plus large pour l'axe X
+                range=[0, 3000]  # Plage plus large pour l'axe X
             )
             fig4.update_yaxes(
                 tickformat=".1f",
-                range=[0, 500]  # Maintenir la plage pour le taux d'occupation
+                range=[-100, 500]  # Maintenir la plage pour le taux d'occupation
             )
 
             # Affichage du graphique avec une colonne d'aide
@@ -894,7 +881,7 @@ if df is not None:
                 'hospi_30J': 'sum',
                 'lit_hospi_complete': 'sum',
                 'journee_hospi_complete': 'sum',
-                'taux_occupation': 'first'
+                'taux_occupation': 'mean'
             }).reset_index()
 
             # Regrouper les hospitalisations de 1-9 jours
@@ -976,6 +963,78 @@ if df is not None:
                          "(24h, 1-9 jours, 10-19 jours, 20 jours et plus). "
                          "La ligne rouge indique le taux d'occupation des lits, permettant d'analyser "
                          "la relation entre la durée des séjours et l'utilisation des capacités."
+                )
+            # Préparer les données pour le graphique de répartition par lits
+            df_equip = df_capacity_filtered.groupby('annee').agg({
+                'lit_hospi_complete': 'sum',
+                'place_hospi_partielle': 'sum',
+                'taux_equipement': 'mean'
+            }).reset_index()
+    
+            # Créer le graphique avec Plotly Express
+            fig_equip = px.bar(df_equip, 
+                x='annee',
+                y=['lit_hospi_complete'],
+                title="Répartition des lits et places d'hospitalisation disponibles",
+                barmode='stack',
+                labels={
+                    'value': 'Nombre de lits et places',
+                    'variable': 'Nombre',
+                    'annee': 'Année',
+                    'lit_hospi_complete': '1 jour et plus',
+                    'place_hospi_partielle': '24 h',
+                },
+                color_discrete_map={
+                    'lit_hospi_complete': '#6fffe9',
+                    'place_hospi_partielle': '#5bc0be',
+                }
+            )
+
+            # Ajouter la ligne de taux d'équipement 
+            fig_equip.add_scatter(
+                x=df_equip['annee'],
+                y=df_equip['taux_equipement'],
+                name="Taux d'équipement",
+                mode='lines+markers+text',
+                text=df_equip['taux_equipement'].apply(lambda x: f"{x:.1f}"),
+                textposition="top center",
+                line=dict(color='orange', width=2),
+                yaxis='y2'
+            )
+
+            # Mise à jour du layout
+            fig_equip.update_layout(
+                yaxis2=dict(
+                    title="Taux d'équipement pour 1000 Habitants",
+                    overlaying='y',
+                    side='right',
+                    showgrid=False,
+                    range=[0, 8],  # Ajuster l'échelle de 0 à 8
+                ),
+                height=500,
+                legend=dict(
+                    orientation="h",  # Légende horizontale
+                    yanchor="bottom",
+                    y=1.35,  # Position plus haute
+                    xanchor="right",
+                    x=1,
+                    title=dict(text="Capacité")  # Ajout d'un titre à la légende
+                ),
+                margin=dict(t=150, b=100, l=50, r=50)  # Augmentation de la marge supérieure
+            )
+
+            # Affichage du graphique avec une colonne d'aide
+            col_chart4, col_help4 = st.columns([1, 0.01])
+            with col_chart4:
+                st.plotly_chart(fig_equip, use_container_width=True)
+            with col_help4:
+                st.metric(
+                    label="help",
+                    value="",
+                    help="Ce graphique montre la répartition des lits et places disponibles "
+                         "pour une prise en charge médicale, en nombre. "
+                         "La ligne orange indique le taux d'équipement des lits, en nombre pour 1000 habitants, "
+                         "permettant d'analyser la capacité moyenne disponible dans une zone donnée."
                 )
 
     with tab3:
