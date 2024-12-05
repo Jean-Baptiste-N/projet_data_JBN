@@ -36,29 +36,19 @@ st.markdown("""
     }
     .custom-button {
         background-color: #f0f2f6;
-        color: #1f77b4;
-        border: 1px solid #1f77b4;
+        color: #f0f2f6;
         border-radius: 4px;
         padding: 0.5rem 1rem;
         font-size: 0.9rem;
         transition: all 0.3s ease;
     }
     .custom-button:hover {
-        background-color: #1f77b4;
+        background-color: #f0f2f6;
         color: white;
         cursor: pointer;
     }
-    div[data-testid="stButton"] button {
-        background-color: #f0f2f6;
-        color: #1f77b4;
-        border: 1px solid #1f77b4;
-        border-radius: 4px;
-        padding: 0.5rem 1rem;
-        font-size: 0.9rem;
-        transition: all 0.3s ease;
-    }
     div[data-testid="stButton"] button:hover {
-        background-color: #1f77b4;
+        background-color: #1f77b1;
         color: white;
     }
     </style>
@@ -134,7 +124,7 @@ def get_highlight_function(x):
 
 def generate_map(map_data, geojson_data, niveau_administratif, df_filtered, sexe, annee, service):
     # Créer la carte de base
-    m = folium.Map(location=[46.603354, 1.888334], zoom_start=6, tiles='Stadia.AlidadeSatellite')
+    m = folium.Map(location=[46.603354, 1.888334], zoom_start=6)
 
     # Convertir les données en DataFrame pour Folium
     df_map = pd.DataFrame(list(map_data.items()), columns=['territoire', 'nbr_hospi'])
@@ -244,12 +234,12 @@ df = load_data()
 
 # Mapping des services vers les pages Focus correspondantes
 SERVICE_TO_PAGE = {
-    'ESND': 'Focus_sur_les_ESND',
-    'SSR': 'Focus_sur_les_ssr',
-    'PSY': 'Focus_sur_la_psy',
-    'M': 'Focus_sur_la_medecine',
-    'C': 'Focus_sur_la_chirurgie',
-    'O': 'Focus_sur_l\'obstetrique'  # Ajout de la correspondance pour le code 'O'
+    'ESND': 'esnd',
+    'SSR': 'ssr',
+    'PSY': 'psy',
+    'M': 'medecine',
+    'C': 'chirurgie',
+    'O': 'obstetrique'  # Ajout de la correspondance pour le code 'O'
 }
 
 if df is not None:
@@ -357,39 +347,57 @@ if df is not None:
     if selected_service != "Tous":
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            if st.button("👉 Voir plus de détails", use_container_width=False):
-                # Obtenir la page correspondante au service
-                target_page = SERVICE_TO_PAGE.get(selected_service)
+            # Obtenir la page correspondante au service
+            target_page = SERVICE_TO_PAGE.get(selected_service)
+            
+            if target_page:
+                # Préparation des paramètres avec les valeurs actuellement sélectionnées
+                params = {
+                    "sexe": sexe,
+                    "annee": selected_year,
+                    "departement": "Tous les départements"  # Valeur par défaut
+                }
                 
-                if target_page:
-                    # Préparation des paramètres avec les valeurs actuellement sélectionnées
-                    params = {
-                        "sexe": sexe,
-                        "annee": selected_year,
-                        "departement": "Tous les départements"  # Valeur par défaut
-                    }
-                    
-                    # Ajout de la région/département sélectionné
-                    if niveau_administratif == "Régions":
-                        if selected_area != "Toutes les régions":
-                            params["region"] = selected_area
-                    else:
-                        if selected_area != "Tous les départements":
-                            params["departement"] = selected_area
-                    
-                    # Ajout de la pathologie si sélectionnée
-                    if selected_pathology != "Toutes les pathologies":
-                        params["pathologie"] = selected_pathology
-                    
-                    # Construction de l'URL avec la page correspondante
-                    base_url = f"http://localhost:8501/{target_page}"
-                    query_string = urlencode(params)
-                    url = f"{base_url}?{query_string}"
-                    
-                    # Ouvrir dans un nouvel onglet
-                    webbrowser.open_new_tab(url)
+                # Ajout de la région/département sélectionné
+                if niveau_administratif == "Régions":
+                    if selected_area != "Toutes les régions":
+                        params["region"] = selected_area
                 else:
-                    st.error(f"Pas de page détaillée disponible pour le service {selected_service}")
+                    if selected_area != "Tous les départements":
+                        params["departement"] = selected_area
+                
+                # Ajout de la pathologie si sélectionnée
+                if selected_pathology != "Toutes les pathologies":
+                    params["pathologie"] = selected_pathology
+                
+                # Construction de l'URL avec la page correspondante
+                base_url = f"https://medicalcapacity.streamlit.app/{target_page}"
+                query_string = urlencode(params)
+                url = f"{base_url}?{query_string}"
+                
+                # Afficher le lien HTML avec style
+                button_style = """
+                    <style>
+                        .custom-button {
+                            display: inline-block;
+                            padding: 10px 20px;
+                            background-color: #F0F2F6;
+                            color: #0066CC;
+                            text-decoration: none;
+                            border-radius: 10px;
+                            transition: all 0.3s ease;
+                        }
+                        .custom-button:hover {
+                            text-decoration: underline;
+                            transform: translateY(-2px);
+                            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+                        }
+                    </style>
+                """
+                st.markdown(button_style, unsafe_allow_html=True)
+                st.markdown(f'<a href="{url}" target="_self" class="custom-button">👉 Cliquer pour plus de détails</a>', unsafe_allow_html=True)
+            else:
+                st.error(f"Pas de page détaillée disponible pour le service {selected_service}")
                     
     # Création des onglets après les filtres
     tab1, tab2 = st.tabs([
@@ -426,4 +434,4 @@ if df is not None:
             )
 
     st.markdown("---")
-    st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")
+    st.markdown("Développé avec 💫 | Le Wagon - Promotion 2024")
