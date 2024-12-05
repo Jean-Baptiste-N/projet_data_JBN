@@ -97,19 +97,25 @@ if df is not None:
     default_annee = params.get('annee', 'Toutes les années')
     if default_annee not in years_options:
         default_annee = 'Toutes les années'
-    
+        
     # Gestion du département sélectionné
-    default_departement = params.get('departement')
-    if default_departement:
-        # Si un département est spécifié, on le cherche dans les données
-        if default_departement in regions:
-            default_region = default_departement
-        else:
-            default_region = 'Tous les départements'
-    else:
-        default_region = params.get('region', 'Tous les départements')
-        if default_region not in regions_options:
-            default_region = 'Tous les départements'
+    default_departement = params.get('departement', 'Tous les départements')
+    if default_departement not in regions_options:
+        default_departement = 'Tous les départements'
+        
+    # Création des widgets de sélection
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        selected_sex = st.selectbox('Sexe', sex_options, index=sex_options.index(default_sexe))
+    with col2:
+        selected_year = st.selectbox('Année', years_options, index=years_options.index(default_annee))
+    with col3:
+        selected_region = st.selectbox('Département', regions_options, index=regions_options.index(default_departement))
+
+    # Mise à jour des paramètres d'URL
+    st.query_params['sexe'] = selected_sex
+    st.query_params['annee'] = selected_year
+    st.query_params['departement'] = selected_region if selected_region != "Tous les départements" else None
 
     # Liste déroulante de toutes les pathologies
     all_pathologies = sorted(df['nom_pathologie'].unique())
@@ -121,35 +127,6 @@ if df is not None:
         default_pathologie = 'Toutes les pathologies'
     
     # Filtres principaux en colonnes
-    col1, col2, col3= st.columns(3)
-
-    with col1:
-        # Sélection du sexe
-        selected_sexe = st.selectbox(
-            "Sexe",
-            sex_options,
-            key="selecteur_sexe_chir",
-            index=sex_options.index(default_sexe)
-        )
-
-    with col2:
-        # Filtre année
-        selected_year = st.selectbox(
-            "Année", 
-            years_options, 
-            key="year_filter_chir",
-            index=years_options.index(default_annee)
-        )
-        
-    with col3:
-        # Sélection du département
-        selected_region = st.selectbox(
-            "Départements",
-            regions_options,
-            key="region_filter_chir",
-            index=regions_options.index(default_region)
-        )
-    
     selected_pathology = st.selectbox(
         "🔍 Sélectionner une pathologie en chirurgie pour obtenir des détails",
         all_pathologies,
@@ -158,17 +135,14 @@ if df is not None:
     )
     
     # Mettre à jour les paramètres de l'URL
-    st.query_params['sexe'] = selected_sexe
-    st.query_params['annee'] = selected_year
-    st.query_params['departement'] = selected_region if selected_region != "Tous les départements" else None
     st.query_params['pathologie'] = selected_pathology if selected_pathology != "Toutes les pathologies" else None
 
     # Filtrage des données selon les sélections
     df_filtered = df.copy()
     
     # Filtre par sexe
-    if selected_sexe != "Ensemble":
-        df_filtered = df_filtered[df_filtered['sexe'] == selected_sexe]
+    if selected_sex != "Ensemble":
+        df_filtered = df_filtered[df_filtered['sexe'] == selected_sex]
         
     # Filtre par année
     if selected_year != "Toutes les années":
@@ -178,25 +152,15 @@ if df is not None:
     if selected_region != "Tous les départements":
         df_filtered = df_filtered[df_filtered['nom_region'] == selected_region]
         
-    # Liste déroulante de toutes les pathologies
-    all_pathologies = sorted(df_filtered['nom_pathologie'].unique())
-    all_pathologies.insert(0, "Toutes les pathologies")  # Ajout de l'option pour toutes les pathologies
-    selected_pathology = st.selectbox(
-        "🔍 Sélectionner une pathologie en chirurgie pour obtenir des détails",
-        all_pathologies,
-        key="pathology_selector_chir"
-    )
-        # Filtre par pathologie
-
     # Afficher les données pour la pathologie sélectionnée
     if selected_pathology == "Toutes les pathologies":
         path_data = df_filtered[
-            (df_filtered['sexe'] == selected_sexe)
+            (df_filtered['sexe'] == selected_sex)
         ]
     else:
         path_data = df_filtered[
             (df_filtered['nom_pathologie'] == selected_pathology) &
-            (df_filtered['sexe'] == selected_sexe)
+            (df_filtered['sexe'] == selected_sex)
         ]
     
     # Calcul des métriques avec les filtres appliqués
@@ -205,12 +169,12 @@ if df is not None:
     # Calcul de la durée moyenne en fonction de la sélection
     if selected_pathology == "Toutes les pathologies":
         avg_duration = df_filtered[
-            (df_filtered['sexe'] == selected_sexe)
+            (df_filtered['sexe'] == selected_sex)
         ]['AVG_duree_hospi'].mean()
     else:
         avg_duration = df_filtered[
             (df_filtered['nom_pathologie'] == selected_pathology) &
-            (df_filtered['sexe'] == selected_sexe)
+            (df_filtered['sexe'] == selected_sex)
         ]['AVG_duree_hospi'].mean()
     
     col1, col2, col3, col4, col5 = st.columns(5)

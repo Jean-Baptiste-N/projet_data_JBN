@@ -610,7 +610,8 @@ if df_nbr_hospi is not None:
             
             # Création du graphique empilé
             fig2 = go.Figure()
-            
+
+            # Ajout des barres pour le nombre d'hospitalisations
             fig2.add_trace(go.Bar(
                 x=rapport_by_territory['percent_hospi_total_24h'],
                 y=rapport_by_territory[territory_col],
@@ -691,8 +692,7 @@ if df_nbr_hospi is not None:
         with col3:
             st.metric("Indice comparatif", f"{path_data['indice_comparatif_tt_age_percent'].mean():.1f}%", help="Indice comparatif moyen en terme de capacité estimée")
         with col4:
-            #verifier si utiliser total_jj ou total_24h
-            hospi_24h = path_data['evolution_hospi_total_24h'].sum()  # Utilisation de hospi_total_jj au lieu de hospi_total_24h
+            hospi_24h = pd.to_numeric(path_data['hospi_total_24h'], errors='coerce').sum()  # Convert to numeric first and handle any non-numeric values
             st.metric("Total hospitalisations <24h", f"{hospi_24h/1_000:,.2f}K",help="Total d'hospitalisations de moins de 24h")
         with col5:
             # Sélectionner toutes les colonnes tranche_age_*
@@ -1253,7 +1253,7 @@ if df_nbr_hospi is not None:
                 hovertemplate="<b>Date:</b> %{x|%Y}<br>" +
                              "<b>Taux standardisé:</b> %{y:.2f}‰<br><extra></extra>"
             ))
-            
+
             fig.add_trace(go.Scatter(
                 x=evolution_taux['year'],
                 y=evolution_taux['tx_brut_tt_age_pour_mille'],
