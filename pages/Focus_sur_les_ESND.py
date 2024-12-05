@@ -192,7 +192,7 @@ if df is not None:
 
     with tab1:
         # Ajout d'un sélecteur pour filtrer le nombre de pathologies à afficher
-        n_pathologies = st.slider("Nombre de pathologies à afficher", 5, 5, 5)
+        n_pathologies = st.slider("Nombre de pathologies à afficher", 4, 5, 5)
         
         # Top pathologies par nombre d'hospitalisations
         hospi_by_pathology = df_filtered.groupby('nom_pathologie').agg({
@@ -1055,8 +1055,7 @@ if df is not None:
             # Si une pathologie spécifique est sélectionnée, on n'a pas besoin de prendre les N premières
             top_n_patho = [selected_pathology]
         else:
-            # Ne garder que les données pour "Ensemble"
-            df_filtered = df_filtered[df_filtered['sexe'] == 'Ensemble'].copy()
+            df_filtered = df_filtered
 
             # Trouver toutes les pathologies disponibles
             all_patho = df_filtered.groupby('nom_pathologie')['nbr_hospi'].sum().sort_values(ascending=False)
@@ -1224,12 +1223,75 @@ if df is not None:
                      "Utilisez les contrôles d'animation pour voir l'évolution dans le temps."
             )
 
-        # Afficher le tableau récapitulatif des pathologies
-        st.markdown(f"### Récapitulatif des {len(top_n_patho)} pathologies principales")
+        st.markdown("---")
+
+        # Tableau récapitulatif détaillé
+        st.subheader("Évolution des pathologies par Sexe - Augmentation les plus importantes (2018-2022)")
         
-        recap = df_topn[['nom_pathologie', 'nbr_hospi']].groupby('nom_pathologie')['nbr_hospi'].sum().reset_index()
+        # Données filtrées selon le sexe
+        df_filtered = df_filtered[df_filtered['sexe'] == selected_sex]
+
+        # Calculer les évolutions année par année
+        evolutions_sexe_by_year = {}
+        years = sorted(df_filtered['annee'].unique())
+
+        for i in range(len(years) - 1):
+            current_year_sexe = years[i]
+            next_year_sexe = years[i + 1]
+            
+            # Données pour l'année courante et suivante
+            current_data_sexe = df_filtered[df_filtered['annee'] == current_year_sexe].groupby(['sexe', 'nom_pathologie'])['nbr_hospi'].sum()
+            next_data_sexe = df_filtered[df_filtered['annee'] == next_year_sexe].groupby(['sexe', 'nom_pathologie'])['nbr_hospi'].sum()
+            
+            # Calculer l'évolution en pourcentage
+            evolution_sexe = ((next_data_sexe - current_data_sexe) / current_data_sexe * 100).fillna(0)
+            evolutions_sexe_by_year[f'{current_year_sexe}-{next_year_sexe}'] = evolution_sexe.dropna()
+
+        # Créer le DataFrame de base avec le nombre total d'hospitalisations
+        df_summary_sexe = df_filtered.groupby(['sexe', 'nom_pathologie'])['nbr_hospi'].sum().reset_index()
+
+        # Ajouter les évolutions année par année
+        for period, evolution_sexe in evolutions_sexe_by_year.items():
+            df_summary_sexe = df_summary_sexe.merge(
+                evolution_sexe.reset_index().rename(columns={'nbr_hospi': f'Évol. {period} (%)'}),
+                on=['sexe', 'nom_pathologie'],
+                how='left'
+            )
+
+        # Calculer l'évolution globale (2018-2022)
+        hospi_2018_sexe = df_filtered[df_filtered['annee'] == min(years)].groupby(['sexe', 'nom_pathologie'])['nbr_hospi'].sum()
+        hospi_2022_sexe = df_filtered[df_filtered['annee'] == max(years)].groupby(['sexe', 'nom_pathologie'])['nbr_hospi'].sum()
+        evolution_globale_sexe = ((hospi_2022_sexe - hospi_2018_sexe) / hospi_2018_sexe * 100).fillna(0)
+        
+
+        # Ajouter l'évolution globale au DataFrame
+        df_summary_sexe = df_summary_sexe.merge(
+            evolution_globale_sexe.reset_index().rename(columns={'nbr_hospi': 'Évol. globale (%)'}),
+            on=['sexe', 'nom_pathologie'],
+            how='left'
+        )
+
+        # Trier par évolution globale décroissante
+        df_summary_sexe = df_summary_sexe.sort_values('Évol. globale (%)', ascending=False)
+
+        # Colonnes d'évolution pour le gradient
+        evolution_sexe_columns = [col for col in df_summary_sexe.columns if 'Évol.' in col]
+
+        # Calculer les min et max des colonnes d'évolution
+        evolution_sexe_values = df_summary_sexe[evolution_sexe_columns].values.flatten()
+        evolution_sexe_values = evolution_sexe_values[~pd.isna(evolution_sexe_values)]  # Supprime les NaN
+        vmin_sexe, vmax_sexe = evolution_sexe_values.min(), evolution_sexe_values.max()
+
+        # Formater et afficher le tableau
         st.dataframe(
-            recap.style.format({
-                'nbr_hospi': '{:,.0f}'
-            })
+            df_summary_sexe.style.format({
+                'nbr_hospi': '{:,.0f}',
+                **{col: '{:+.1f}%' for col in evolution_sexe_columns}
+            }).background_gradient(
+                cmap='RdYlGn_r',
+                subset=evolution_sexe_columns,
+                vmin=vmin_sexe,
+                vmax=vmax_sexe
+            ),
+            use_container_width=True
         )
