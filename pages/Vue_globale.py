@@ -513,7 +513,7 @@ if df_nbr_hospi is not None:
             go.Scatter(
                 x=capacite_by_year['year'],
                 y=capacite_by_year['passage_urgence'],
-                name="Passage aux urgences mesurés",
+                name="Passages aux urgences mesurés",
                 yaxis='y2',
                 line=dict(color=MAIN_COLOR, width=3),
                 hovertemplate="<b>Année:</b> %{x|%Y}<br>" +
