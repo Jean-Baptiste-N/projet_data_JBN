@@ -152,3 +152,6 @@ try:
 
 except Exception as e:
     st.error(f"Une erreur s'est produite : {str(e)}")
+
+st.markdown("---")
+st.markdown("Développé avec 💫| Le Wagon - Batch #1834 - Promotion 2024")

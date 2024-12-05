@@ -703,9 +703,6 @@ if df is not None:
             use_container_width=True
         )
         
-    st.markdown("---")
-    st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")
-
     with tab2:
         
         # Requête pour les données de capacité
@@ -1335,3 +1332,6 @@ if df is not None:
             ),
             use_container_width=True
         )
+
+st.markdown("---")
+st.markdown("Développé avec 💫| Le Wagon - Batch #1834 - Promotion 2024")

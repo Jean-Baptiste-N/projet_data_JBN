@@ -382,7 +382,7 @@ if df is not None:
                         params["pathologie"] = selected_pathology
                     
                     # Construction de l'URL avec la page correspondante
-                    base_url = f"http://localhost:8501/{target_page}"
+                    base_url = f"https://medicalcapacity.streamlit.app/{target_page}"
                     query_string = urlencode(params)
                     url = f"{base_url}?{query_string}"
                     
@@ -426,4 +426,4 @@ if df is not None:
             )
 
     st.markdown("---")
-    st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")
+    st.markdown("Développé avec 💫 | Le Wagon - Promotion 2024")

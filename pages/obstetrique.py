@@ -1,9 +1,10 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 from google.cloud import bigquery
+from plotly.subplots import make_subplots
+
 
 # Définition des couleurs du thème
 MAIN_COLOR = '#003366'  # Bleu marine principal
@@ -36,16 +37,8 @@ st.markdown ("""
     </style>
 """, unsafe_allow_html=True)
 
-# Récupération des paramètres d'URL
-params = st.query_params
-pre_selected_service = params.get("service")
-pre_selected_pathologie = params.get("pathologie")
-pre_selected_annee = params.get("annee")
-
-
 # Titre principal
-st.markdown ("<h1 class='main-title' style='margin-top: -70px;'>🏥 Service ESND (Établissements de soins longue durée)</h1>", unsafe_allow_html=True)
-
+st.markdown("<h1 class='main-title' style='margin-top: -70px; margin-bottom: -8000px;'>👶 Service Obstétrique</h1>", unsafe_allow_html=True)
 
 # Fonction de chargement des données
 @st.cache_resource
@@ -55,14 +48,13 @@ def load_data():
         gcp_service_account = st.secrets["gcp_service_account"]
         client = bigquery.Client.from_service_account_info(gcp_service_account)
         
-        # Requête SQL pour les données de ESND
-        
-        df = client.query("""
+        # Chargement des données
+        query = """
             SELECT *
             FROM `projet-jbn-data-le-wagon.dbt_medical_analysis_join_total_morbidite.class_join_total_morbidite_sexe_population`
-            WHERE classification = 'ESND' AND niveau = 'Départements'
-        """).to_dataframe()
-
+            WHERE classification = 'O'  AND niveau = 'Départements'
+        """
+        df = client.query(query).to_dataframe()
         return df
         
     except Exception as e:
@@ -118,15 +110,24 @@ if df is not None:
         if default_region not in regions_options:
             default_region = 'Tous les départements'
 
+    # Liste déroulante de toutes les pathologies
+    all_pathologies = sorted(df['nom_pathologie'].unique())
+    all_pathologies.insert(0, "Toutes les pathologies")  # Ajout de l'option pour toutes les pathologies
+    
+    # Récupération du paramètre pathologie avec validation
+    default_pathologie = params.get('pathologie', 'Toutes les pathologies')
+    if default_pathologie not in all_pathologies:
+        default_pathologie = 'Toutes les pathologies'
+    
     # Filtres principaux en colonnes
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3= st.columns(3)
 
     with col1:
         # Sélection du sexe
         selected_sexe = st.selectbox(
             "Sexe",
             sexe_options,
-            key="selecteur_sexe_esnd",
+            key="selecteur_sexe_obs",
             index=sexe_options.index(default_sexe)
         )
 
@@ -135,7 +136,7 @@ if df is not None:
         selected_year = st.selectbox(
             "Année", 
             years_options, 
-            key="year_filter_esnd",
+            key="year_filter_obs",
             index=years_options.index(default_annee)
         )
         
@@ -144,16 +145,22 @@ if df is not None:
         selected_region = st.selectbox(
             "Départements",
             regions_options,
-            key="region_filter_esnd",
+            key="region_filter_obs",
             index=regions_options.index(default_region)
         )
     
+    selected_pathology = st.selectbox(
+        "🔍 Sélectionner une pathologie en obstétrie pour obtenir des détails",
+        all_pathologies,
+        key="pathology_selector_obs",
+        index=all_pathologies.index(default_pathologie)
+    )
+    
     # Mettre à jour les paramètres de l'URL
-    st.query_params.update({
-        'sexe': selected_sexe,
-        'annee': str(selected_year),
-        'region': selected_region
-    })
+    st.query_params['sexe'] = selected_sexe
+    st.query_params['annee'] = selected_year
+    st.query_params['departement'] = selected_region if selected_region != "Tous les départements" else None
+    st.query_params['pathologie'] = selected_pathology if selected_pathology != "Toutes les pathologies" else None
 
     # Filtrage des données selon les sélections
     df_filtered = df.copy()
@@ -170,22 +177,6 @@ if df is not None:
     if selected_region != "Tous les départements":
         df_filtered = df_filtered[df_filtered['nom_region'] == selected_region]
         
-    # Liste déroulante de toutes les pathologies
-    all_pathologies = sorted(df_filtered['nom_pathologie'].unique())
-    all_pathologies.insert(0, "Toutes les pathologies")  # Ajout de l'option pour toutes les pathologies
-    
-    # Utiliser la pathologie pré-sélectionnée si elle existe
-    default_pathologie = params.get('pathologie', 'Toutes les pathologies')
-    pathologie_index = all_pathologies.index(default_pathologie) if default_pathologie in all_pathologies else 0
-    
-    selected_pathology = st.selectbox(
-        "🔍 Sélectionner une pathologie en ESND pour obtenir des détails",
-        all_pathologies,
-        key="pathology_selector_esnd",
-        index=pathologie_index
-    )
-        # Filtre par pathologie
-
     # Afficher les données pour la pathologie sélectionnée
     if selected_pathology == "Toutes les pathologies":
         path_data = df_filtered[
@@ -239,7 +230,7 @@ if df is not None:
 
     with tab1:
         # Ajout d'un sélecteur pour filtrer le nombre de pathologies à afficher
-        n_pathologies = st.slider("Nombre de pathologies à afficher", 1, 5, 5)
+        n_pathologies = st.slider("Nombre de pathologies à afficher", 5, 14, 7)
         
         # Top pathologies par nombre d'hospitalisations
         hospi_by_pathology = df_filtered.groupby('nom_pathologie').agg({
@@ -285,7 +276,7 @@ if df is not None:
         # Mise à jour de la mise en page
         fig.update_layout(
             title=dict(
-                text='Pathologies ESND : Hospitalisations et durée moyenne de séjour',
+                text='Pathologies médicales : Hospitalisations et durée moyenne de séjour',
                 y=0.95,
                 x=0.5,
                 xanchor='right',
@@ -306,7 +297,7 @@ if df is not None:
         with col_chart:
             st.plotly_chart(fig, use_container_width=True)
         with col_help:
-            st.metric(label="help", value="", help="Ce graphique montre la relation entre le nombre d'hospitalisations (barres) et la durée moyenne de séjour (ligne) pour les pathologies ESND les plus fréquentes.")
+            st.metric(label="help", value="", help="Ce graphique montre la relation entre le nombre d'hospitalisations (barres) et la durée moyenne de séjour (ligne) pour les pathologies médicales les plus fréquentes.")
 
         # Préparation des DataFrames pour les graphiques
         df_nbr_hospi = df_filtered.copy()
@@ -348,7 +339,7 @@ if df is not None:
                 size=combined_data['nbr_hospi'].tolist(),
                 size_max=40,
                 color='AVG_duree_hospi',
-                color_continuous_scale='Ice',
+                color_continuous_scale='Burgyl',
                 range_x=[0, max_hospi_by_year + x_margin],
                 range_y=[0, max_duree_by_year + y_margin]
             )
@@ -368,7 +359,7 @@ if df is not None:
                 size=combined_data['nbr_hospi'].tolist(),
                 size_max=40,
                 color='AVG_duree_hospi',
-                color_continuous_scale='Ice',
+                color_continuous_scale='Burgyl',
                 range_x=[0, max_hospi_by_year + x_margin],
                 range_y=[0, max_duree_by_year + y_margin]
             )
@@ -462,7 +453,7 @@ if df is not None:
                     marker=dict(
                         size=[x/current_data['nbr_hospi'].max()*30 for x in current_data['nbr_hospi']],
                         color=current_data['AVG_duree_hospi'].tolist(),
-                        colorscale='Ice',
+                        colorscale='Burgyl',
                         opacity=0.8,
                         colorbar=dict(title="Durée moyenne de séjour (jours)")
                     ),
@@ -512,7 +503,7 @@ if df is not None:
                             marker=dict(
                                 size=point_sizes,
                                 color=avg_duree,
-                                colorscale='Ice',
+                                colorscale='Burgyl',
                                 opacity=0.8,
                                 colorbar=dict(title="Durée moyenne de séjour (jours)")
                             ),
@@ -642,7 +633,7 @@ if df is not None:
             st.metric(label="help", value="", help="Ce graphique 3D montre la distribution des hospitalisations par pathologie, durée moyenne de séjour et indice comparatif. Utilisez les contrôles pour faire pivoter et zoomer sur le graphique.")
         st.markdown("---")
         # Tableau récapitulatif détaillé
-        st.subheader("Évolution des pathologies (2018-2022)")
+        st.subheader("Évolution des pathologies - Augmentation les plus importantes (2018-2022)")
         
         # Calculer les évolutions année par année
         evolutions_by_year = {}
@@ -711,6 +702,33 @@ if df is not None:
             use_container_width=True
         )
         
+        st.markdown("---")
+        
+        # Deuxième tableau avec les baisses en premier
+        st.subheader("Évolution des pathologies - Baisses les plus importantes (2018-2022)")
+        
+        # Utiliser le même DataFrame mais trié dans l'ordre inverse
+        df_summary_desc = df_summary.sort_values('Évol. globale (%)', ascending=True)
+        
+        # Filtrer les NaN avant de calculer min et max
+        evolution_values_desc = df_summary_desc[evolution_columns].values.flatten()
+        evolution_values_desc = evolution_values_desc[~pd.isna(evolution_values_desc)]  # Supprime les NaN
+        vmin_desc, vmax_desc = evolution_values_desc.min(), evolution_values_desc.max()
+
+        # Afficher le deuxième tableau
+        st.dataframe(
+            df_summary_desc.style.format({
+                'Hospitalisations': '{:,.0f}',
+                **{col: '{:+.1f}%' for col in evolution_columns}
+            }).background_gradient(
+                cmap='RdYlGn_r',
+                subset=evolution_columns,
+                vmin=vmin_desc,
+                vmax=vmax_desc
+            ),
+            use_container_width=True
+        )        
+
     st.markdown("---")
     st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")
 
@@ -724,7 +742,7 @@ if df is not None:
                 df_capacity = client.query("""
                     SELECT *
                     FROM `projet-jbn-data-le-wagon.dbt_medical_analysis_join_total_morbidite_capacite.class_join_total_morbidite_capacite_kpi`
-                    WHERE classification = 'ESND' AND niveau = 'Départements'
+                    WHERE classification = 'O' AND niveau = 'Départements'
                 """).to_dataframe()
                 return df_capacity
             except Exception as e:
@@ -891,11 +909,11 @@ if df is not None:
             # Formater les axes
             fig4.update_xaxes(
                 tickformat=",",
-                range=[0, 3000]  # Plage plus large pour l'axe X
+                range=[0, 1500]  # Plage plus large pour l'axe X
             )
             fig4.update_yaxes(
                 tickformat=".1f",
-                range=[-100, 500]  # Maintenir la plage pour le taux d'occupation
+                range=[0, 310]  # Maintenir la plage pour le taux d'occupation
             )
 
             # Affichage du graphique avec une colonne d'aide
@@ -1011,6 +1029,7 @@ if df is not None:
                          "La ligne rouge indique le taux d'occupation des lits, permettant d'analyser "
                          "la relation entre la durée des séjours et l'utilisation des capacités."
                 )
+
             # Préparer les données pour le graphique de répartition par lits
             df_equip = df_capacity_filtered.groupby('annee').agg({
                 'lit_hospi_complete': 'sum',
@@ -1021,15 +1040,15 @@ if df is not None:
             # Créer le graphique avec Plotly Express
             fig_equip = px.bar(df_equip, 
                 x='annee',
-                y=['lit_hospi_complete'],
+                y=['lit_hospi_complete', 'place_hospi_partielle'],
                 title="Répartition des lits et places d'hospitalisation disponibles",
                 barmode='stack',
                 labels={
                     'value': 'Nombre de lits et places',
                     'variable': 'Nombre',
                     'annee': 'Année',
-                    'lit_hospi_complete': "1 jour et plus",
-                    'place_hospi_partielle': "24 h",
+                    'lit_hospi_complete': "Lits d'hospitalisation complète",
+                    'place_hospi_partielle': "Places en hospitalisation partielle",
                 },
                 color_discrete_map={
                     'lit_hospi_complete': '#6fffe9',
@@ -1269,7 +1288,6 @@ if df is not None:
                      "La taille des bulles représente le nombre d'hospitalisations. "
                      "Utilisez les contrôles d'animation pour voir l'évolution dans le temps."
             )
-
         st.markdown("---")
 
         # Tableau récapitulatif détaillé
@@ -1342,3 +1360,5 @@ if df is not None:
             ),
             use_container_width=True
         )
+st.markdown("---")
+st.markdown("Développé avec 💫| Le Wagon - Batch #1834 - Promotion 2024")

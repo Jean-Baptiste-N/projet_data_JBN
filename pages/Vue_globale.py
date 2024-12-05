@@ -1489,4 +1489,4 @@ if df_nbr_hospi is not None:
 
 
 st.markdown("---")
-st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")
+st.markdown("Développé avec 💫| Le Wagon - Batch #1834 - Promotion 2024")
