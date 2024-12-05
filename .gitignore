@@ -38,7 +38,7 @@ logs/
 *.swp
 *.swo
 .DS_Store
-
+*.log
 # Streamlit
 .streamlit/secrets.toml
 

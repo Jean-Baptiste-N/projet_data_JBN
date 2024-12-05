@@ -52,7 +52,7 @@ def load_data():
         query = """
             SELECT *
             FROM `projet-jbn-data-le-wagon.dbt_medical_analysis_join_total_morbidite.class_join_total_morbidite_sexe_population`
-            WHERE classification = 'O'  AND niveau = 'Régions'
+            WHERE classification = 'O'  AND niveau = 'Départements'
         """
         df = client.query(query).to_dataframe()
         return df
@@ -1078,8 +1078,7 @@ if df is not None:
             # Si une pathologie spécifique est sélectionnée, on n'a pas besoin de prendre les N premières
             top_n_patho = [selected_pathology]
         else:
-            # Ne garder que les données pour "Ensemble"
-            df_filtered = df_filtered[df_filtered['sexe'] == 'Ensemble'].copy()
+            df_filtered = df_filtered
 
             # Trouver toutes les pathologies disponibles
             all_patho = df_filtered.groupby('nom_pathologie')['nbr_hospi'].sum().sort_values(ascending=False)
@@ -1251,6 +1250,9 @@ if df is not None:
         # Tableau récapitulatif détaillé
         st.subheader("Évolution des pathologies par Sexe - Augmentation les plus importantes (2018-2022)")
         
+        # Données filtrées selon le sexe
+        df_filtered = df_filtered[df_filtered['sexe'] == selected_sex]
+
         # Calculer les évolutions année par année
         evolutions_sexe_by_year = {}
         years = sorted(df_filtered['annee'].unique())
@@ -1265,7 +1267,7 @@ if df is not None:
             
             # Calculer l'évolution en pourcentage
             evolution_sexe = ((next_data_sexe - current_data_sexe) / current_data_sexe * 100).fillna(0)
-            evolutions_sexe_by_year[f'{current_year_sexe}-{next_year_sexe}'] = evolution_sexe
+            evolutions_sexe_by_year[f'{current_year_sexe}-{next_year_sexe}'] = evolution_sexe.dropna()
 
         # Créer le DataFrame de base avec le nombre total d'hospitalisations
         df_summary_sexe = df_filtered.groupby(['sexe', 'nom_pathologie'])['nbr_hospi'].sum().reset_index()
@@ -1282,6 +1284,7 @@ if df is not None:
         hospi_2018_sexe = df_filtered[df_filtered['annee'] == min(years)].groupby(['sexe', 'nom_pathologie'])['nbr_hospi'].sum()
         hospi_2022_sexe = df_filtered[df_filtered['annee'] == max(years)].groupby(['sexe', 'nom_pathologie'])['nbr_hospi'].sum()
         evolution_globale_sexe = ((hospi_2022_sexe - hospi_2018_sexe) / hospi_2018_sexe * 100).fillna(0)
+        
 
         # Ajouter l'évolution globale au DataFrame
         df_summary_sexe = df_summary_sexe.merge(
