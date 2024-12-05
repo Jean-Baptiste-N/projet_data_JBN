@@ -401,7 +401,7 @@ if df_nbr_hospi is not None:
             )
 
 
-        # Préparation des données
+        # Graph 1 Préparation des données
         hospi_by_year = df_nbr_hospi_filtered.groupby('year')['nbr_hospi'].sum().reset_index()
         duree_by_year = df_duree_hospi_filtered.groupby('year')['AVG_duree_hospi'].mean().reset_index()
         
@@ -476,6 +476,91 @@ if df_nbr_hospi is not None:
         with col_help:
             st.metric(label="help", value="", help="Ce graphique combine le nombre total d'hospitalisations (barres bleues) et la durée moyenne de séjour (ligne verte) par année. Passez votre souris sur les éléments du graphique pour voir les détails.")
         
+        # Graph 2 Préparation des données
+        capacite_by_year = df_capacite_hospi_filtered.groupby('year')[['lit_hospi_complete','place_hospi_partielle','passage_urgence']].sum().reset_index()
+        
+        # Création du graphique combiné
+        fig2 = go.Figure()
+
+        # Ajout des barres pour le nombre d'hospitalisations
+        fig2.add_trace(
+            go.Bar(
+                x=capacite_by_year['year'],
+                y=capacite_by_year['lit_hospi_complete'],
+                name="Capacité en Lits (>24h)",
+                yaxis='y',
+                marker_color=SECONDARY_COLOR,
+                hovertemplate="<b>Année:</b> %{x|%Y}<br>" +
+                             "<b>Lits:</b> %{y:,.0f}<br><extra></extra>"
+            )
+        )
+        fig2.add_trace(
+            go.Bar(
+                x=capacite_by_year['year'],
+                y=capacite_by_year['place_hospi_partielle'],
+                name="Capacité en Places (<24h)",
+                yaxis='y',
+                marker_color=ACCENT_COLOR,
+                hovertemplate="<b>Année:</b> %{x|%Y}<br>" +
+                             "<b>Places:</b> %{y:,.0f}<br><extra></extra>"
+            )
+        )
+        # Ajout de la ligne pour la durée moyenne
+        fig2.add_trace(
+            go.Scatter(
+                x=capacite_by_year['year'],
+                y=capacite_by_year['passage_urgence'],
+                name="Passage aux urgences mesurés",
+                yaxis='y2',
+                line=dict(color=MAIN_COLOR, width=3),
+                hovertemplate="<b>Année:</b> %{x|%Y}<br>" +
+                             "<b>Passages Urgences:</b> %{y:.1f}<br><extra></extra>"
+            )
+        )
+
+        # Mise à jour de la mise en page
+        fig2.update_layout(
+            title="Évolution des Capacités hospitalières en Lits et Places, et des passages aux urgences",
+            yaxis=dict(
+                title="Capacité des hospitalisations",
+                titlefont=dict(color=SECONDARY_COLOR),
+                tickfont=dict(color=SECONDARY_COLOR),
+                showgrid=True
+            ),
+            yaxis2=dict(
+                title="Capacité des Urgences",
+                titlefont=dict(color=MAIN_COLOR),
+                tickfont=dict(color=MAIN_COLOR),
+                anchor="x",
+                overlaying="y",
+                side="right"
+            ),
+            xaxis=dict(
+                title="Année",
+                tickformat="%Y"
+            ),
+            showlegend=True,
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
+            ),
+            hovermode='x unified',
+            hoverlabel=dict(bgcolor="white"),
+            barmode='relative',
+            template='plotly_white'
+        )
+
+        # Affichage du graphique
+        col_chart, col_help = st.columns([1, 0.01])
+        with col_chart:
+            st.plotly_chart(fig2, use_container_width=True)
+        with col_help:
+            st.metric(label="help", value="", help="Ce graphique combine le nombre total d'hospitalisations (barres bleues) et la durée moyenne de séjour (ligne verte) par année. Passez votre souris sur les éléments du graphique pour voir les détails.")
+        
+
     # Analyse Géographique
     with tab2:
         st.markdown("""
@@ -514,11 +599,11 @@ if df_nbr_hospi is not None:
                 st.metric(label="help", value="", help=f"Ce graphique montre le nombre total d'hospitalisations par {territory_label}. Les barres sont triées par ordre croissant.")
         
         with col2:
-            duree_by_territory = df_duree_hospi_filtered.groupby(territory_col)['AVG_duree_hospi'].mean().reset_index()
-            duree_by_territory = duree_by_territory.sort_values(by='AVG_duree_hospi', ascending=True)
+            rapport_by_territory = df_nbr_hospi_filtered.groupby(territory_col)[['hospi_total_24h','hospi_total_jj','total_hospi']].sum().reset_index()
+            rapport_by_territory = rapport_by_territory.sort_values(by='total_hospi', ascending=True)
             
-            fig = px.bar(duree_by_territory, x='AVG_duree_hospi', y=territory_col,
-                        title=f'Durée moyenne des hospitalisations par {territory_label}',
+            fig = px.bar(rapport_by_territory, x=['hospi_total_24h','hospi_total_jj'], y=territory_col,
+                        title=f'Proportion des types de durée des hospitalisations par {territory_label}',
                         labels={'AVG_duree_hospi': 'Durée moyenne (jours)',
                                territory_col: territory_label.capitalize()},
                         custom_data=[territory_col, 'AVG_duree_hospi'],

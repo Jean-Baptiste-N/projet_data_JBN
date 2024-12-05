@@ -52,7 +52,7 @@ def load_data():
         query = """
             SELECT *
             FROM `projet-jbn-data-le-wagon.dbt_medical_analysis_join_total_morbidite.class_join_total_morbidite_sexe_population`
-            WHERE classification = 'O'  AND niveau = 'Régions'
+            WHERE classification = 'O'  AND niveau = 'Départements'
         """
         df = client.query(query).to_dataframe()
         return df
