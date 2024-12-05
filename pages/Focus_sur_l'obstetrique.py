@@ -40,7 +40,6 @@ st.markdown ("""
 # Titre principal
 st.markdown("<h1 class='main-title' style='margin-top: -70px; margin-bottom: -8000px;'>👶 Service Obstétrique</h1>", unsafe_allow_html=True)
 
-
 # Fonction de chargement des données
 @st.cache_resource
 def load_data():
@@ -49,14 +48,13 @@ def load_data():
         gcp_service_account = st.secrets["gcp_service_account"]
         client = bigquery.Client.from_service_account_info(gcp_service_account)
         
-        # Requête SQL pour les données de médecine
-        
-        df = client.query("""
+        # Chargement des données
+        query = """
             SELECT *
             FROM `projet-jbn-data-le-wagon.dbt_medical_analysis_join_total_morbidite.class_join_total_morbidite_sexe_population`
-            WHERE classification = 'O' AND niveau = 'Départements'
-        """).to_dataframe()
-
+            WHERE classification = 'O'  AND niveau = 'Régions'
+        """
+        df = client.query(query).to_dataframe()
         return df
         
     except Exception as e:
@@ -80,12 +78,8 @@ def format_number(number):
         return str(number)
 
 if df is not None:
-    # Remplacement des valeurs nulles pour la Covid en 2018-2019
-    # mask_covid = (df_pathologie_hospi['nom_pathologie'] == 'Infection à coronavirus (COVID-19)') & (df['annee'].isin([2018, 2019]))
-    # df.loc[mask_covid, ['nbr_hospi', 'AVG_duree_hospi', 'indice_comparatif_tt_age_percent']] = 0
-    
     # Filtres principaux en colonnes
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3= st.columns(3)
 
     with col1:
         # Sélection du sexe
@@ -96,7 +90,7 @@ if df is not None:
         )
 
     with col2:
-        # Filtre année avec une liste déroulante simple
+        # Filtre années avec une liste déroulante simple
         years = sorted(df['annee'].unique(), reverse=True)
         years_options = ["Toutes les années"] + [str(year) for year in years]
         selected_year = st.selectbox(
@@ -134,9 +128,9 @@ if df is not None:
     all_pathologies = sorted(df_filtered['nom_pathologie'].unique())
     all_pathologies.insert(0, "Toutes les pathologies")  # Ajout de l'option pour toutes les pathologies
     selected_pathology = st.selectbox(
-        "🔍 Sélectionner une pathologie en obstétrique pour obtenir des détails",
+        "🔍 Sélectionner une pathologie en médecine pour obtenir des détails",
         all_pathologies,
-        key="pathology_selector_obs"
+        key="pathology_selector_psy"
     )
         # Filtre par pathologie
 
@@ -193,7 +187,7 @@ if df is not None:
 
     with tab1:
         # Ajout d'un sélecteur pour filtrer le nombre de pathologies à afficher
-        n_pathologies = st.slider("Nombre de pathologies à afficher", 5, 57, 20)
+        n_pathologies = st.slider("Nombre de pathologies à afficher", 5, 14, 7)
         
         # Top pathologies par nombre d'hospitalisations
         hospi_by_pathology = df_filtered.groupby('nom_pathologie').agg({
@@ -239,7 +233,7 @@ if df is not None:
         # Mise à jour de la mise en page
         fig.update_layout(
             title=dict(
-                text='Pathologies obstétriques : Hospitalisations et durée moyenne de séjour',
+                text='Pathologies médicales : Hospitalisations et durée moyenne de séjour',
                 y=0.95,
                 x=0.5,
                 xanchor='right',
@@ -260,7 +254,7 @@ if df is not None:
         with col_chart:
             st.plotly_chart(fig, use_container_width=True)
         with col_help:
-            st.metric(label="help", value="", help="Ce graphique montre la relation entre le nombre d'hospitalisations (barres) et la durée moyenne de séjour (ligne) pour les pathologies obsétriques les plus fréquentes.")
+            st.metric(label="help", value="", help="Ce graphique montre la relation entre le nombre d'hospitalisations (barres) et la durée moyenne de séjour (ligne) pour les pathologies médicales les plus fréquentes.")
 
         # Préparation des DataFrames pour les graphiques
         df_nbr_hospi = df_filtered.copy()
@@ -302,7 +296,7 @@ if df is not None:
                 size=combined_data['nbr_hospi'].tolist(),
                 size_max=40,
                 color='AVG_duree_hospi',
-                color_continuous_scale='Viridis',
+                color_continuous_scale='Burgyl',
                 range_x=[0, max_hospi_by_year + x_margin],
                 range_y=[0, max_duree_by_year + y_margin]
             )
@@ -322,7 +316,7 @@ if df is not None:
                 size=combined_data['nbr_hospi'].tolist(),
                 size_max=40,
                 color='AVG_duree_hospi',
-                color_continuous_scale='Viridis',
+                color_continuous_scale='Burgyl',
                 range_x=[0, max_hospi_by_year + x_margin],
                 range_y=[0, max_duree_by_year + y_margin]
             )
@@ -416,7 +410,7 @@ if df is not None:
                     marker=dict(
                         size=[x/current_data['nbr_hospi'].max()*30 for x in current_data['nbr_hospi']],
                         color=current_data['AVG_duree_hospi'].tolist(),
-                        colorscale='Viridis',
+                        colorscale='Burgyl',
                         opacity=0.8,
                         colorbar=dict(title="Durée moyenne de séjour (jours)")
                     ),
@@ -466,7 +460,7 @@ if df is not None:
                             marker=dict(
                                 size=point_sizes,
                                 color=avg_duree,
-                                colorscale='Viridis',
+                                colorscale='Burgyl',
                                 opacity=0.8,
                                 colorbar=dict(title="Durée moyenne de séjour (jours)")
                             ),
@@ -645,15 +639,22 @@ if df is not None:
         
         # Colonnes d'évolution pour le gradient
         evolution_columns = [col for col in df_summary.columns if 'Évol.' in col]
-        
+
+        # Filtrer les NaN avant de calculer min et max
+        evolution_values = df_summary[evolution_columns].values.flatten()
+        evolution_values = evolution_values[~pd.isna(evolution_values)]  # Supprime les NaN
+        vmin, vmax = evolution_values.min(), evolution_values.max()
+
         # Formater et afficher le tableau
         st.dataframe(
             df_summary.style.format({
                 'Hospitalisations': '{:,.0f}',
                 **{col: '{:+.1f}%' for col in evolution_columns}
             }).background_gradient(
+                cmap='RdYlGn_r',
                 subset=evolution_columns,
-                cmap='RdYlBu_r'
+                vmin=vmin,
+                vmax=vmax
             ),
             use_container_width=True
         )
@@ -666,18 +667,25 @@ if df is not None:
         # Utiliser le même DataFrame mais trié dans l'ordre inverse
         df_summary_desc = df_summary.sort_values('Évol. globale (%)', ascending=True)
         
+        # Filtrer les NaN avant de calculer min et max
+        evolution_values_desc = df_summary_desc[evolution_columns].values.flatten()
+        evolution_values_desc = evolution_values_desc[~pd.isna(evolution_values_desc)]  # Supprime les NaN
+        vmin_desc, vmax_desc = evolution_values_desc.min(), evolution_values_desc.max()
+
         # Afficher le deuxième tableau
         st.dataframe(
             df_summary_desc.style.format({
                 'Hospitalisations': '{:,.0f}',
                 **{col: '{:+.1f}%' for col in evolution_columns}
             }).background_gradient(
+                cmap='RdYlGn_r',
                 subset=evolution_columns,
-                cmap='RdYlBu_r'
+                vmin=vmin_desc,
+                vmax=vmax_desc
             ),
             use_container_width=True
-        )
-        
+        )        
+
     st.markdown("---")
     st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")
 
@@ -721,8 +729,8 @@ if df is not None:
                 taux_occ = df_capacity['taux_occupation'].iloc[0]
                 st.metric("Taux d'occupation", f"{taux_occ*100:.1f}%")
             with col4:
-                total_urgences = df_capacity['passage_urgence'].sum()
-                st.metric("Passages aux urgences", format_number(total_urgences))
+                taux_equip = df_capacity['taux_equipement'].iloc[0]
+                st.metric("Taux d'équipement", f"{taux_equip} lits pour 1000 Habitants")
 
             # Calculer le nombre total d'hospitalisations par département
             total_hospi_by_dept = df_capacity.groupby('nom_region').agg({
@@ -789,7 +797,7 @@ if df is not None:
                 hover_name='nom_region',
                 text='nom_region',
                 size_max=50,
-                color_continuous_scale='Viridis',
+                color_continuous_scale='Rainbow',
                 labels={
                     'value': 'Nombre',
                     'variable': 'Type',
@@ -858,7 +866,7 @@ if df is not None:
             # Formater les axes
             fig4.update_xaxes(
                 tickformat=",",
-                range=[-100, 2000]  # Plage plus large pour l'axe X
+                range=[0, 1500]  # Plage plus large pour l'axe X
             )
             fig4.update_yaxes(
                 tickformat=".1f",
@@ -895,7 +903,7 @@ if df is not None:
                 'hospi_30J': 'sum',
                 'lit_hospi_complete': 'sum',
                 'journee_hospi_complete': 'sum',
-                'taux_occupation': 'first'
+                'taux_occupation': 'mean'
             }).reset_index()
 
             # Regrouper les hospitalisations de 1-9 jours
@@ -977,6 +985,79 @@ if df is not None:
                          "(24h, 1-9 jours, 10-19 jours, 20 jours et plus). "
                          "La ligne rouge indique le taux d'occupation des lits, permettant d'analyser "
                          "la relation entre la durée des séjours et l'utilisation des capacités."
+                )
+
+            # Préparer les données pour le graphique de répartition par lits
+            df_equip = df_capacity_filtered.groupby('annee').agg({
+                'lit_hospi_complete': 'sum',
+                'place_hospi_partielle': 'sum',
+                'taux_equipement': 'mean'
+            }).reset_index()
+    
+            # Créer le graphique avec Plotly Express
+            fig_equip = px.bar(df_equip, 
+                x='annee',
+                y=['lit_hospi_complete', 'place_hospi_partielle'],
+                title="Répartition des lits et places d'hospitalisation disponibles",
+                barmode='stack',
+                labels={
+                    'value': 'Nombre de lits et places',
+                    'variable': 'Nombre',
+                    'annee': 'Année',
+                    'lit_hospi_complete': '1 jour et plus',
+                    'place_hospi_partielle': '24 h',
+                },
+                color_discrete_map={
+                    'lit_hospi_complete': '#6fffe9',
+                    'place_hospi_partielle': '#5bc0be',
+                }
+            )
+
+            # Ajouter la ligne de taux d'équipement 
+            fig_equip.add_scatter(
+                x=df_equip['annee'],
+                y=df_equip['taux_equipement'],
+                name="Taux d'équipement",
+                mode='lines+markers+text',
+                text=df_equip['taux_equipement'].apply(lambda x: f"{x:.1f}"),
+                textposition="top center",
+                line=dict(color='orange', width=2),
+                yaxis='y2'
+            )
+
+            # Mise à jour du layout
+            fig_equip.update_layout(
+                yaxis2=dict(
+                    title="Taux d'équipement pour 1000 Habitants",
+                    overlaying='y',
+                    side='right',
+                    showgrid=False,
+                    range=[0, 8],  # Ajuster l'échelle de 0 à 8
+                ),
+                height=500,
+                legend=dict(
+                    orientation="h",  # Légende horizontale
+                    yanchor="bottom",
+                    y=1.35,  # Position plus haute
+                    xanchor="right",
+                    x=1,
+                    title=dict(text="Capacité")  # Ajout d'un titre à la légende
+                ),
+                margin=dict(t=150, b=100, l=50, r=50)  # Augmentation de la marge supérieure
+            )
+
+            # Affichage du graphique avec une colonne d'aide
+            col_chart4, col_help4 = st.columns([1, 0.01])
+            with col_chart4:
+                st.plotly_chart(fig_equip, use_container_width=True)
+            with col_help4:
+                st.metric(
+                    label="help",
+                    value="",
+                    help="Ce graphique montre la répartition des lits et places disponibles "
+                         "pour une prise en charge médicale, en nombre. "
+                         "La ligne orange indique le taux d'équipement des lits, en nombre pour 1000 habitants, "
+                         "permettant d'analyser la capacité moyenne disponible dans une zone donnée."
                 )
 
     with tab3:
@@ -1165,13 +1246,71 @@ if df is not None:
                      "La taille des bulles représente le nombre d'hospitalisations. "
                      "Utilisez les contrôles d'animation pour voir l'évolution dans le temps."
             )
+        st.markdown("---")
 
-        # Afficher le tableau récapitulatif des pathologies
-        st.markdown(f"### Récapitulatif des {len(top_n_patho)} pathologies principales")
+        # Tableau récapitulatif détaillé
+        st.subheader("Évolution des pathologies par Sexe - Augmentation les plus importantes (2018-2022)")
         
-        recap = df_topn[['nom_pathologie', 'nbr_hospi']].groupby('nom_pathologie')['nbr_hospi'].sum().reset_index()
+        # Calculer les évolutions année par année
+        evolutions_sexe_by_year = {}
+        years = sorted(df_filtered['annee'].unique())
+
+        for i in range(len(years) - 1):
+            current_year_sexe = years[i]
+            next_year_sexe = years[i + 1]
+            
+            # Données pour l'année courante et suivante
+            current_data_sexe = df_filtered[df_filtered['annee'] == current_year_sexe].groupby(['sexe', 'nom_pathologie'])['nbr_hospi'].sum()
+            next_data_sexe = df_filtered[df_filtered['annee'] == next_year_sexe].groupby(['sexe', 'nom_pathologie'])['nbr_hospi'].sum()
+            
+            # Calculer l'évolution en pourcentage
+            evolution_sexe = ((next_data_sexe - current_data_sexe) / current_data_sexe * 100).fillna(0)
+            evolutions_sexe_by_year[f'{current_year_sexe}-{next_year_sexe}'] = evolution_sexe
+
+        # Créer le DataFrame de base avec le nombre total d'hospitalisations
+        df_summary_sexe = df_filtered.groupby(['sexe', 'nom_pathologie'])['nbr_hospi'].sum().reset_index()
+
+        # Ajouter les évolutions année par année
+        for period, evolution_sexe in evolutions_sexe_by_year.items():
+            df_summary_sexe = df_summary_sexe.merge(
+                evolution_sexe.reset_index().rename(columns={'nbr_hospi': f'Évol. {period} (%)'}),
+                on=['sexe', 'nom_pathologie'],
+                how='left'
+            )
+
+        # Calculer l'évolution globale (2018-2022)
+        hospi_2018_sexe = df_filtered[df_filtered['annee'] == min(years)].groupby(['sexe', 'nom_pathologie'])['nbr_hospi'].sum()
+        hospi_2022_sexe = df_filtered[df_filtered['annee'] == max(years)].groupby(['sexe', 'nom_pathologie'])['nbr_hospi'].sum()
+        evolution_globale_sexe = ((hospi_2022_sexe - hospi_2018_sexe) / hospi_2018_sexe * 100).fillna(0)
+
+        # Ajouter l'évolution globale au DataFrame
+        df_summary_sexe = df_summary_sexe.merge(
+            evolution_globale_sexe.reset_index().rename(columns={'nbr_hospi': 'Évol. globale (%)'}),
+            on=['sexe', 'nom_pathologie'],
+            how='left'
+        )
+
+        # Trier par évolution globale décroissante
+        df_summary_sexe = df_summary_sexe.sort_values('Évol. globale (%)', ascending=False)
+
+        # Colonnes d'évolution pour le gradient
+        evolution_sexe_columns = [col for col in df_summary_sexe.columns if 'Évol.' in col]
+
+        # Calculer les min et max des colonnes d'évolution
+        evolution_sexe_values = df_summary_sexe[evolution_sexe_columns].values.flatten()
+        evolution_sexe_values = evolution_sexe_values[~pd.isna(evolution_sexe_values)]  # Supprime les NaN
+        vmin_sexe, vmax_sexe = evolution_sexe_values.min(), evolution_sexe_values.max()
+
+        # Formater et afficher le tableau
         st.dataframe(
-            recap.style.format({
-                'nbr_hospi': '{:,.0f}'
-            })
+            df_summary_sexe.style.format({
+                'nbr_hospi': '{:,.0f}',
+                **{col: '{:+.1f}%' for col in evolution_sexe_columns}
+            }).background_gradient(
+                cmap='RdYlGn_r',
+                subset=evolution_sexe_columns,
+                vmin=vmin_sexe,
+                vmax=vmax_sexe
+            ),
+            use_container_width=True
         )

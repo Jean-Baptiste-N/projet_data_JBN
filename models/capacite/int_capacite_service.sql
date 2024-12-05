@@ -25,5 +25,5 @@ SEHEM as seance_hemodyalise,
 SERAD as seance_radiotherapie,
 SECHI as seance_chimio,
 cle_unique
-FROM {{ref('stg_capacite_services_h__capacite_2022_par_service')}}
+FROM {{ref('stg_capacite_services_h__capacite_2022_par_service1')}}
 WHERE an >= 2018

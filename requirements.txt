@@ -19,3 +19,8 @@ e2b
 e2b-code-interpreter
 streamlit-lottie
 pycaret
+streamlit-extras
+folium
+streamlit-folium
+mlflow
+geopy
