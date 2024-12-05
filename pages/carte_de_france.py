@@ -282,8 +282,8 @@ if df is not None:
 
     # Création des onglets après les filtres
     tab1, tab2 = st.tabs([
-        "🗺️ Zoom sur la France",
-        "🏥 Zoom sur les territoires",
+        "🗺️ Hospitalisations en France",
+        "🏥 Taux de recours et capacités en soins",
     ])
 
     with tab1:
@@ -298,7 +298,7 @@ if df is not None:
             st.metric(
                 label="help",
                 value="",
-                help="""Cette carte interactive vous permet de visualiser la distribution des hospitalisations en France.
+                help="""Cette carte interactive vous permet de visualiser la distribution des hosptalisations en France.
                 
                 🔍 Navigation :
                 - Zoomez avec la molette de la souris
@@ -307,11 +307,35 @@ if df is not None:
                 
                 📊 Informations affichées :
                 - Nombre total d'hospitalisations
-                - Durée moyenne de séjour
-                - Top pathologies par territoire
                 
                 🎨 Les couleurs plus foncées indiquent un nombre plus élevé d'hospitalisations."""
             )
 
+    with tab2:
+        # Générer et afficher la carte
+         = show_map(df_, niveau_administratif, selected_service, sexe, selected_year)
+        
+        # Afficher la carte
+        col_chart, col_help = st.columns([1, 0.01])
+        with col_chart:
+            st_folium(m, width=1200, height=800)
+        with col_help:
+            st.metric(
+                label="help",
+                value="",
+                help="""Cette carte interactive vous permet de visualiser la distribution des taux de recours et des taux d'équipement en France.
+                
+                🔍 Navigation :
+                - Zoomez avec la molette de la souris
+                - Cliquez et faites glisser pour vous déplacer
+                - Survolez une région pour voir les détails
+                
+                📊 Informations affichées :
+                - Taux standardisé de recours aux soins, en %
+                - Taux d'équipement, en lits pour 1000 habitants
+                
+                🎨 Les couleurs plus foncées indiquent un nombre plus élevé d'hospitalisations."""
+            )
+    
     st.markdown("---")
     st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")
