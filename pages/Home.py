@@ -59,7 +59,7 @@ else:
 # Introduction
 st.markdown("""
     <div class="feature-card" style="margin-top: -90px; padding: 1rem;">
-    Cette application a été développée dans le cadre d'un projet de fin d'études pour la certification Data Analyste au sein du Wagon. 
+    Cette application a été développée dans le cadre d'un projet de Data Analyse au sein du Wagon. 
     Notre équipe a créé cette plateforme interactive pour explorer et analyser les données hospitalières en France, 
     offrant des insights précieux sur différentes spécialités médicales et les tendances d'hospitalisation.
     </div>
@@ -72,14 +72,14 @@ col1, col2, col3 = st.columns(3)
 with col1:
     st.markdown("""
         <div class="feature-card" style="margin-bottom: -80px;">
-        <h3>🎯 Vue générale</h3>
+        <h3><a href="https://medicalcapacity.streamlit.app/Vue_globale">🎯 Vue générale</a></h3>
         <p>Explorez les tendances nationales et régionales des hospitalisations en France</p>
         <ul>
-            <li>Tableaux de bord interactifs</li>
-            <li>Analyses démographiques</li>
-            <li>Indicateurs de performance</li>
-            <li>Comparaisons régionales</li>
-            <li>Évolution temporelle</li>
+            <li><a href="https://medicalcapacity.streamlit.app/Vue_globale">Tableaux de bord interactifs</a></li>
+            <li><a href="https://medicalcapacity.streamlit.app/Vue_globale">Analyses démographiques</a></li>
+            <li><a href="https://medicalcapacity.streamlit.app/Vue_globale">Indicateurs de performance</a></li>
+            <li><a href="https://medicalcapacity.streamlit.app/Vue_globale">Comparaisons régionales</a></li>
+            <li><a href="https://medicalcapacity.streamlit.app/Vue_globale">Évolution temporelle</a></li>
         </ul>
         </div>
     """, unsafe_allow_html=True)
@@ -90,12 +90,12 @@ with col2:
         <h3>⚕️ Focus spécialités</h3>
         <p>Analyses détaillées par spécialité médicale</p>
         <ul>
-            <li>Chirurgie et interventions</li>
-            <li>Médecine générale et spécialisée</li>
-            <li>Obstétrique et maternité</li>
-            <li>Psychiatrie et santé mentale</li>
-            <li>SSR (Soins de Suite et Réadaptation)</li>
-            <li>ESND (Établissement de Soin Longue Durée)</li>
+            <li><a href="https://medicalcapacity.streamlit.app/Focus_sur_la_chirurgie"> Chirurgie et interventions</a></li>
+            <li><a href="https://medicalcapacity.streamlit.app/Focus_sur_la_medecine">Médecine générale et spécialisée</a></li>
+            <li><a href="https://medicalcapacity.streamlit.app/Focus_sur_l'obstetrique">Obstétrique et maternité</a></li>
+            <li><a href="https://medicalcapacity.streamlit.app/Focus_sur_la_psy">Psychiatrie et santé mentale</a></li>
+            <li><a href="https://medicalcapacity.streamlit.app/Focus_sur_les_ssr">SSR (Soins de Suite et Réadaptation)</a></li>
+            <li><a href="https://medicalcapacity.streamlit.app/Focus_sur_les_ESND">ESND (Établissement de Soin Longue Durée)</a></li>
         </ul>
         </div>
     """, unsafe_allow_html=True)
@@ -106,11 +106,11 @@ with col3:
         <h3>🔮 Outils avancés</h3>
         <p>Fonctionnalités interactives et prédictives</p>
         <ul>
-            <li>Prédictions hospitalières</li>
-            <li>Générateur de graphiques personnalisés</li>
-            <li>Assistant virtuel IA</li>
-            <li>Cartographie interactive</li>
-            <li>Analyses comparatives</li>
+            <li><a href="https://medicalcapacity.streamlit.app/Predictions_hospitalieres">Prédictions hospitalières</a></li>
+            <li><a href="https://medicalcapacity.streamlit.app/G%C3%A9n%C3%A9rez_vos_propres_graphiques">Générateur de graphiques personnalisés</a></li>
+            <li><a href="https://medicalcapacity.streamlit.app/Votre_docteur_en_ligne_v2">Assistant virtuel IA</a></li>
+            <li><a href="https://medicalcapacity.streamlit.app/carte_de_france">Cartographie interactive</a></li>
+            <li><a href="https://medicalcapacity.streamlit.app/Vue_globale">Analyses comparatives</a></li>
         </ul>
         </div>
     """, unsafe_allow_html=True)
@@ -188,7 +188,7 @@ st.markdown("""
         <li>📊 <a href="https://data.drees.solidarites-sante.gouv.fr/explore/dataset/500_morbidite-hospitaliere/information/">Morbidité hospitalière — DATA.DREES</a></li>
         <li>📈 <a href="https://data.drees.solidarites-sante.gouv.fr/explore/dataset/708_bases-statistiques-sae/information/">Bases statistiques SAE — DATA.DREES</a></li>
         <li>📉 <a href="https://data.drees.solidarites-sante.gouv.fr/explore/dataset/bases-ares/information/">Base ARES - Agrégats régionaux sur les établissements de santé</a></li>
-        <li>📑 <a href="https://drees.solidarites-sante.gouv.fr/publications-communique-de-presse-documents-de-reference/panoramas-de-la-drees/les-depenses-de">Dépenses santé 2022 - Édition 2023</a></li>
+        <li>📑 <a href="https://odin-dataviz-drees.sante.gouv.fr/digdash_dashboard_dataviz_drees/?defaultPage=Morbidit%C3%A9_Hospitali%C3%A8re_Tableau_1_D%C3%A9partements&user=dataviz_sante&pass=dataviz_sante#2">Digdash - Présentation des données Pathologies</a></li>
     </ul>
     </div>
 """, unsafe_allow_html=True)
@@ -197,22 +197,22 @@ st.markdown("""
 st.markdown('<h2 class="section-title" style="margin-top: -10px;">👥 Notre équipe</h2>', unsafe_allow_html=True)
 st.markdown("""
     <div class="feature-card">
-    Ce projet a été réalisé dans le cadre de la formation Data Analyste au Wagon par :
+    Ce projet a été réalisé dans le cadre de la formation Data Analyst au Wagon par :
     
     <br>
     <ul style="list-style-type: none; padding-left: 0;">
         <li>🧑‍💻 <b>Jean-Baptiste Nez</b> - <a href="https://www.linkedin.com/in/jean-baptiste-nez">LinkedIn</a></li>
         <li>👨‍💻 <b>Antonin Bourdelle</b> - <a href="https://www.linkedin.com/in/antonin-bourdelle">LinkedIn</a></li>
-        <li>👩‍💻 <b>Astrid Hugonin</b> - <a href="https://www.linkedin.com/in/astrid-hugonin">LinkedIn</a></li>
+        <li>👩‍💻 <b>Astrid Hugonin</b> - <a href="https://www.linkedin.com/in/astrid-hugonin-716a6680/">LinkedIn</a></li>
     </ul>
     </br>
 
-    <p>🎓 Projet de certification Data Analyste - Le Wagon - 2024</p>
+    <p>🎓 Projet de formation Data Analyst - Le Wagon - 2024</p>
     
-    <p>⭐ <a href="https://github.com/votre-repo">Voir le projet sur GitHub</a></p>
+    <p>⭐ <a href="https://github.com/Jean-Baptiste-N/projet_data_JBN">Voir le projet sur GitHub</a></p>
     </div>
 """, unsafe_allow_html=True)
 
 # Footer
 st.markdown("---")
-st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")
+st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Batch #1834 - Promotion 2024")
