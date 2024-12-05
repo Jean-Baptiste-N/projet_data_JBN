@@ -22,3 +22,5 @@ pycaret
 streamlit-extras
 folium
 streamlit-folium
+mlflow
+geopy
