@@ -151,6 +151,9 @@ def generate_map(map_data, geojson_data, niveau_administratif, df_filtered, sexe
     # Pré-calcul des durées moyennes (utilisant les données déjà filtrées)
     durees_moy = df_filtered.groupby('code_territoire')['AVG_duree_hospi'].mean()
     
+    # Pré-calcul du taux standardisé moyen
+    taux_std_moy = df_filtered.groupby('code_territoire')['tx_standard_tt_age_pour_mille'].mean()
+    
     # Pré-calcul des top pathologies (utilisant les données déjà filtrées)
     top_patho_dict = {}
     for code, group in df_filtered.groupby('code_territoire'):
@@ -184,6 +187,7 @@ def generate_map(map_data, geojson_data, niveau_administratif, df_filtered, sexe
         # Récupérer les statistiques pré-calculées
         nbr_hospi = map_data.get(code, 0)
         duree_moy = durees_moy.get(code, 0)
+        taux_std = taux_std_moy.get(code, 0)
         top_patho_text = top_patho_dict.get(code, "Aucune donnée")
         
         # Créer un tooltip enrichi avec les informations de filtrage
@@ -192,6 +196,7 @@ def generate_map(map_data, geojson_data, niveau_administratif, df_filtered, sexe
             <b>{nom} {annee}</b><br>
             <b>Hospitalisations:</b> {nbr_hospi:,.0f}<br>
             <b>Durée moyenne de séjour:</b> {duree_moy:.1f} jours<br>
+            <b>Taux standardisé moyen:</b> {taux_std:.2f} pour mille habitants<br>
             <b>Pathologies les plus fréquentes:</b><br>
             {top_patho_text}
         </div>
@@ -389,7 +394,7 @@ if df is not None:
     # Création des onglets après les filtres
     tab1, tab2 = st.tabs([
         "🗺️ Zoom sur la France",
-        "🏥 Zoom sur les territoires",
+        ".",
     ])
 
     with tab1:
@@ -414,6 +419,7 @@ if df is not None:
                 📊 Informations affichées :
                 - Nombre total d'hospitalisations
                 - Durée moyenne de séjour
+                - Taux standardisé moyen
                 - Top pathologies par territoire
                 
                 🎨 Les couleurs plus foncées indiquent un nombre plus élevé d'hospitalisations."""

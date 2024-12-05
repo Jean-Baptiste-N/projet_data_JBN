@@ -194,6 +194,18 @@ def load_with_progress():
         st.error(f"Erreur inattendue: {str(e)}")
         st.stop()
 
+def format_number(number):
+    """Format un nombre en K ou M selon sa taille"""
+    try:
+        num = float(str(number).replace(',', ''))
+        if num >= 1_000_000:
+            return f"{num/1_000_000:.1f}M"
+        elif num >= 1_000:
+            return f"{num/1_000:.1f}K"
+        else:
+            return f"{num:.0f}"
+    except (ValueError, TypeError):
+        return str(number)
 # Chargement des données avec interface de progression
 df_nbr_hospi, df_duree_hospi, df_tranche_age_hospi, df_capacite_hospi, df_complet, main_metrics = load_with_progress()
 
@@ -615,7 +627,7 @@ if df_nbr_hospi is not None:
             fig2.add_trace(go.Bar(
                 x=rapport_by_territory['percent_hospi_total_24h'],
                 y=rapport_by_territory[territory_col],
-                name='Hospitalisations de moins de 24h',
+                name='-24h',
                 orientation='h',
                 marker=dict(color=SECONDARY_COLOR),
                 hovertemplate="<b>%{y}:</b> %{x:.1f}%<extra></extra>"
@@ -624,7 +636,7 @@ if df_nbr_hospi is not None:
             fig2.add_trace(go.Bar(
                 x=rapport_by_territory['percent_hospi_total_jj'],
                 y=rapport_by_territory[territory_col],
-                name='Hospitalisations de plusieurs jours',
+                name='+24h',
                 orientation='h',
                 marker=dict(color=ACCENT_COLOR),
                 hovertemplate="<b>%{y}:</b> %{x:.1f}%<extra></extra>"
@@ -686,14 +698,14 @@ if df_nbr_hospi is not None:
         
         col1, col2, col3, col4, col5 = st.columns(5)
         with col1:
-            st.metric("Total d'hospitalisations", f"{total_hospi/1_000:,.2f}K",help="Nombre total d'hospitalisations")
+            st.metric("Total d'hospitalisations", format_number(total_hospi),help="Nombre total d'hospitalisations")
         with col2:
             st.metric("Durée moyenne", f"{avg_duration:.1f} jours",help="Durée moyenne des séjours hospitaliers")
         with col3:
             st.metric("Indice comparatif", f"{path_data['indice_comparatif_tt_age_percent'].mean():.1f}%", help="Indice comparatif moyen en terme de capacité estimée")
         with col4:
             hospi_24h = pd.to_numeric(path_data['hospi_total_24h'], errors='coerce').sum()  # Convert to numeric first and handle any non-numeric values
-            st.metric("Total hospitalisations <24h", f"{hospi_24h/1_000:,.2f}K",help="Total d'hospitalisations de moins de 24h")
+            st.metric("Total hospitalisations <24h", format_number(hospi_24h),help="Total d'hospitalisations de moins de 24h")
         with col5:
             # Sélectionner toutes les colonnes tranche_age_*
             age_columns = [col for col in path_data.columns if col.startswith('tranche_age_')]
@@ -1168,14 +1180,7 @@ if df_nbr_hospi is not None:
         
     # Démographie
     with tab4:
-        st.markdown("""
-            <div class="insight-card">
-            <h3>👥 Profil démographique</h3>
-            <p>Analysez la répartition des hospitalisations par tranche d'âge et par territoire.
-            Identifiez les besoins spécifiques de chaque groupe démographique.</p>
-            </div>
-        """, unsafe_allow_html=True)
-        
+
         # Taux de recours par tranche d'âge
         age_groups = [
             'tranche_age_0_1', 'tranche_age_1_4', 'tranche_age_5_14',
@@ -1270,6 +1275,7 @@ if df_nbr_hospi is not None:
                 height=500,
                 hovermode='x unified',
                 template='plotly_white'
+                
             )
             col_chart, col_help = st.columns([1, 0.01])
             with col_chart:
@@ -1313,31 +1319,8 @@ if df_nbr_hospi is not None:
         with col_help:
             st.metric(label="help", value="", help="Ce graphique montre la distribution des hospitalisations par tranche d'âge pour le territoire sélectionné.")
 
-        # Affichage des indicateurs clés
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            tx_brut = territory_data['tx_brut_tt_age_pour_mille'].mean()
-            st.metric(
-                "Taux brut",
-                f"{tx_brut:.2f}‰"
-            )
-        
-        with col2:
-            tx_standard = territory_data['tx_standard_tt_age_pour_mille'].mean()
-            st.metric(
-                "Taux standardisé",
-                f"{tx_standard:.2f}‰"
-            )
-        
-        with col3:
-            indice_comp = territory_data['indice_comparatif_tt_age_percent'].mean()
-            st.metric(
-                "Indice comparatif",
-                f"{indice_comp:.1f}%"
-            )
 
         # Graphique simplifié de la distribution par âge
-        st.subheader(" Distribution par tranche d'âge")
         
         # Calcul des moyennes par groupe d'âge
         age_means = {
@@ -1359,27 +1342,6 @@ if df_nbr_hospi is not None:
             'Pourcentage': list(age_percentages.values())
         })
         
-        fig = px.bar(df_simplified,
-                    y='Tranche d\'âge',
-                    x='Pourcentage',
-                    orientation='h',
-                    title='Déclinaison par classe d\'âge')
-        
-        colors = ['#40CCC3', '#40CCC3', '#F4A261', '#1E4B9C', '#E76F51', '#264653']
-        
-        fig.update_traces(marker_color=colors,
-                         hovertemplate="<b>%{y}</b><br>%{x:.1f}%<extra></extra>")
-        
-        fig.update_layout(
-            height=400,
-            template='plotly_white',
-            showlegend=False,
-            xaxis_title="Pourcentage (%)",
-            yaxis_title="",
-            yaxis={'categoryorder':'total ascending'}
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
         
     @st.cache_data
     def prepare_hospi_data():
@@ -1409,13 +1371,6 @@ if df_nbr_hospi is not None:
         
     # Création d'un nouvel onglet pour l'analyse par service médical
     with tab5:
-        st.markdown("""
-            <div class="insight-card">
-            <h3>🏥 Performance des services</h3>
-            <p>Évaluez la performance des différents services médicaux à travers le temps.
-            Analysez les tendances et les variations par spécialité.</p>
-            </div>
-        """, unsafe_allow_html=True)
         
         # Filtrer les données pour n'avoir que les totaux par service
         df_service = df_complet[df_complet['sexe'] == 'Ensemble'].copy()
@@ -1455,6 +1410,36 @@ if df_nbr_hospi is not None:
             'tranche_age_55_64']].sum(axis=1)
         df_service_filtered['age_ages'] = df_service_filtered[['tranche_age_65_74', 'tranche_age_75_84', 
             'tranche_age_85_et_plus']].sum(axis=1)
+
+        age_columns = [col for col in df_service.columns if col.startswith('tranche_age_')]
+        
+        df_age_service = df_service_filtered.groupby('classification')[age_columns].mean().reset_index()
+        df_age_service_melted = pd.melt(
+            df_age_service,
+            id_vars=['classification'],
+            value_vars=age_columns,
+            var_name='tranche_age',
+            value_name='pourcentage'
+        )
+        
+        # Nettoyer les noms des tranches d'âge
+        df_age_service_melted['tranche_age'] = df_age_service_melted['tranche_age'].str.replace('tranche_age_', '')
+        
+        fig_heatmap = px.density_heatmap(
+            df_age_service_melted,
+            x='tranche_age',
+            y='classification',
+            z='pourcentage',
+            title='Distribution des tranches d\'âge par service médical',
+            labels={'tranche_age': 'Tranche d\'âge', 'classification': 'Service', 'pourcentage': 'Pourcentage'},
+            color_continuous_scale='redor'
+        )
+        fig_heatmap.update_layout(xaxis_tickangle=-45, template='plotly_white')
+        col_chart, col_help = st.columns([1, 0.01])
+        with col_chart:
+            st.plotly_chart(fig_heatmap, use_container_width=True)
+        with col_help:
+            st.metric(label="help", value="", help="Cette heatmap montre la distribution des tranches d'âge pour chaque service médical. Les couleurs plus foncées indiquent une plus forte concentration.")
 
         # Création du dataframe pour les tranches d'âge regroupées
         age_groups = ['Enfants (0-14)', 'Jeunes (15-24)', 'Adultes (25-44)', 'Seniors (45-64)', 'Personnes âgées (65+)']
@@ -1502,111 +1487,6 @@ if df_nbr_hospi is not None:
         with col_help:
             st.metric(label="help", value="", help="Ce graphique montre l'évolution du nombre d'hospitalisations pour chaque service médical au fil du temps.")
 
-        # Heatmap des services par tranche d'âge
-        age_columns = [col for col in df_service.columns if col.startswith('tranche_age_')]
-        
-        df_age_service = df_service_filtered.groupby('classification')[age_columns].mean().reset_index()
-        df_age_service_melted = pd.melt(
-            df_age_service,
-            id_vars=['classification'],
-            value_vars=age_columns,
-            var_name='tranche_age',
-            value_name='pourcentage'
-        )
-        
-        # Nettoyer les noms des tranches d'âge
-        df_age_service_melted['tranche_age'] = df_age_service_melted['tranche_age'].str.replace('tranche_age_', '')
-        
-        fig_heatmap = px.density_heatmap(
-            df_age_service_melted,
-            x='tranche_age',
-            y='classification',
-            z='pourcentage',
-            title='Distribution des tranches d\'âge par service médical',
-            labels={'tranche_age': 'Tranche d\'âge', 'classification': 'Service', 'pourcentage': 'Pourcentage'},
-            color_continuous_scale='redor'
-        )
-        fig_heatmap.update_layout(xaxis_tickangle=-45, template='plotly_white')
-        col_chart, col_help = st.columns([1, 0.01])
-        with col_chart:
-            st.plotly_chart(fig_heatmap, use_container_width=True)
-        with col_help:
-            st.metric(label="help", value="", help="Cette heatmap montre la distribution des tranches d'âge pour chaque service médical. Les couleurs plus foncées indiquent une plus forte concentration.")
-
-        # Création d'une visualisation 3D plus pertinente
-        st.subheader("Évolution des services médicaux dans le temps")
-
-        # Préparation des données pour le graphique 3D
-        df_evolution = df_service.groupby(['annee', 'classification', 'nom_region'])['nbr_hospi'].sum().reset_index()
-        
-        # Création du graphique 3D
-        fig_3d = go.Figure()
-
-        # Ajout d'une trace pour chaque service
-        for service in df_evolution['classification'].unique():
-            df_service_data = df_evolution[df_evolution['classification'] == service]
-            
-            fig_3d.add_trace(go.Scatter3d(
-                x=df_service_data['annee'],
-                y=df_service_data['nom_region'],
-                z=df_service_data['nbr_hospi'],
-                name=service,
-                mode='markers',
-                marker=dict(
-                    size=6,
-                    opacity=0.7
-                ),
-                hovertemplate=
-                '<b>Service:</b> ' + service + '<br>' +
-                '<b>Année:</b> %{x}<br>' +
-                '<b>Région:</b> %{y}<br>' +
-                '<b>Hospitalisations:</b> %{z:,.0f}<br>'
-            ))
-
-        # Mise en page du graphique 3D
-        fig_3d.update_layout(
-            title='Distribution des hospitalisations par service, année et région',
-            scene=dict(
-                xaxis_title='Année',
-                yaxis_title='Région',
-                zaxis_title='Nombre d\'hospitalisations',
-                camera=dict(
-                    up=dict(x=0, y=0, z=1),
-                    center=dict(x=0, y=0, z=0),
-                    eye=dict(x=2, y=2, z=1.5)
-                )
-            ),
-            showlegend=True,
-            legend=dict(
-                yanchor="top",
-                y=0.99,
-                xanchor="right",
-                x=0.99
-            ),
-            width=800,
-            height=600,
-            template='plotly_white'
-        )
-
-        # Affichage du graphique
-        col_chart, col_help = st.columns([1, 0.01])
-        with col_chart:
-            st.plotly_chart(fig_3d, use_container_width=True)
-        with col_help:
-            st.metric(label="help", value="", help="Ce graphique 3D montre la distribution des hospitalisations par service, année et région. Utilisez les contrôles pour faire pivoter et zoomer sur le graphique.")
-        
-        # Tableau récapitulatif simplifié
-        st.subheader("Résumé par service médical")
-        df_summary = df_service_filtered.groupby('classification').agg({
-            'nbr_hospi': 'sum',
-            'evolution_nbr_hospi': 'mean'
-        }).reset_index()
-        
-        df_summary.columns = ['Service', 'Hospitalisations', 'Évolution (%)']
-        st.dataframe(df_summary.style.format({
-            'Hospitalisations': '{:,.0f}',
-            'Évolution (%)': '{:+.1f}%'
-        }))
 
 st.markdown("---")
 st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")
