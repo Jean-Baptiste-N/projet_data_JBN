@@ -6,6 +6,8 @@ import pandas as pd
 import plotly.express as px
 from google.cloud import bigquery
 import numpy as np
+import webbrowser
+from urllib.parse import urlencode
 
 MAIN_COLOR = "#FF4B4B"
 
@@ -31,6 +33,33 @@ st.markdown("""
         background-color: #f8f9fa;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         margin-bottom: 1rem;
+    }
+    .custom-button {
+        background-color: #f0f2f6;
+        color: #1f77b4;
+        border: 1px solid #1f77b4;
+        border-radius: 4px;
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+    .custom-button:hover {
+        background-color: #1f77b4;
+        color: white;
+        cursor: pointer;
+    }
+    div[data-testid="stButton"] button {
+        background-color: #f0f2f6;
+        color: #1f77b4;
+        border: 1px solid #1f77b4;
+        border-radius: 4px;
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+    div[data-testid="stButton"] button:hover {
+        background-color: #1f77b4;
+        color: white;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -122,6 +151,9 @@ def generate_map(map_data, geojson_data, niveau_administratif, df_filtered, sexe
     # Pré-calcul des durées moyennes (utilisant les données déjà filtrées)
     durees_moy = df_filtered.groupby('code_territoire')['AVG_duree_hospi'].mean()
     
+    # Pré-calcul du taux standardisé moyen
+    taux_std_moy = df_filtered.groupby('code_territoire')['tx_standard_tt_age_pour_mille'].mean()
+    
     # Pré-calcul des top pathologies (utilisant les données déjà filtrées)
     top_patho_dict = {}
     for code, group in df_filtered.groupby('code_territoire'):
@@ -155,6 +187,7 @@ def generate_map(map_data, geojson_data, niveau_administratif, df_filtered, sexe
         # Récupérer les statistiques pré-calculées
         nbr_hospi = map_data.get(code, 0)
         duree_moy = durees_moy.get(code, 0)
+        taux_std = taux_std_moy.get(code, 0)
         top_patho_text = top_patho_dict.get(code, "Aucune donnée")
         
         # Créer un tooltip enrichi avec les informations de filtrage
@@ -163,6 +196,7 @@ def generate_map(map_data, geojson_data, niveau_administratif, df_filtered, sexe
             <b>{nom} {annee}</b><br>
             <b>Hospitalisations:</b> {nbr_hospi:,.0f}<br>
             <b>Durée moyenne de séjour:</b> {duree_moy:.1f} jours<br>
+            <b>Taux standardisé moyen:</b> {taux_std:.2f} pour mille habitants<br>
             <b>Pathologies les plus fréquentes:</b><br>
             {top_patho_text}
         </div>
@@ -208,15 +242,25 @@ def show_map(df_filtered, niveau_administratif, selected_service, sexe, annee):
 # Chargement des données
 df = load_data()
 
+# Mapping des services vers les pages Focus correspondantes
+SERVICE_TO_PAGE = {
+    'ESND': 'Focus_sur_les_ESND',
+    'SSR': 'Focus_sur_les_ssr',
+    'PSY': 'Focus_sur_la_psy',
+    'M': 'Focus_sur_la_medecine',
+    'C': 'Focus_sur_la_chirurgie',
+    'O': 'Focus_sur_l\'obstetrique'  # Ajout de la correspondance pour le code 'O'
+}
+
 if df is not None:
     # Création de colonnes pour les filtres
-    col1, col2, col3, = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         # Sélection du niveau administratif
         niveau_administratif = st.selectbox(
             "Niveau administratif",
-            ["Régions", "Départements"]
+            ["Départements"]
         )
 
     with col2:
@@ -228,19 +272,48 @@ if df is not None:
     
     with col3:
         # Sélection de l'année
-        years = sorted(df['year'].unique())
+        years = sorted(df['annee'].unique())
         years.insert(0, "Toutes les années")
         selected_year = st.selectbox("Année", years)
     
-    # Filtrer les données
+    # Filtrer les données par année et sexe
     if selected_year != "Toutes les années":
-        df_filtered = df[df['year'] == selected_year]
+        df_filtered = df[df['annee'] == selected_year]
     else:
         df_filtered = df.copy()
     
     if sexe != "Ensemble":
         df_filtered = df_filtered[df_filtered['sexe'] == sexe]
-        
+
+    # Filtrer d'abord par niveau administratif
+    df_filtered = df_filtered[df_filtered['niveau'] == niveau_administratif]
+    with col4:
+    # Ajout du sélecteur de région/département
+        if niveau_administratif == "Régions":
+            regions = sorted(df_filtered['nom_region'].unique())
+            regions.insert(0, "Toutes les régions")
+            selected_area = st.selectbox(
+                "Sélectionner une région",
+                regions,
+                key="region_selector"
+            )
+            
+            # Appliquer le filtre de région
+            if selected_area != "Toutes les régions":
+                df_filtered = df_filtered[df_filtered['nom_region'] == selected_area]
+        else:
+            departements = sorted(df_filtered['nom_region'].unique())  # On utilise toujours nom_region mais après avoir filtré par niveau
+            departements.insert(0, "Tous les départements")
+            selected_area = st.selectbox(
+                "Sélectionner un département",
+                departements,
+                key="departement_selector"
+            )
+            
+            # Appliquer le filtre de département
+            if selected_area != "Tous les départements":
+                df_filtered = df_filtered[df_filtered['nom_region'] == selected_area]
+            
     col1, col2 = st.columns(2)
     
     with col1:
@@ -280,10 +353,48 @@ if df is not None:
     if selected_pathology != "Toutes les pathologies":
         df_filtered = df_filtered[df_filtered['nom_pathologie'] == selected_pathology]
 
+    # Ajout du bouton "Voir plus de détails" si un service est sélectionné
+    if selected_service != "Tous":
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            if st.button("👉 Voir plus de détails", use_container_width=False):
+                # Obtenir la page correspondante au service
+                target_page = SERVICE_TO_PAGE.get(selected_service)
+                
+                if target_page:
+                    # Préparation des paramètres avec les valeurs actuellement sélectionnées
+                    params = {
+                        "sexe": sexe,
+                        "annee": selected_year,
+                        "departement": "Tous les départements"  # Valeur par défaut
+                    }
+                    
+                    # Ajout de la région/département sélectionné
+                    if niveau_administratif == "Régions":
+                        if selected_area != "Toutes les régions":
+                            params["region"] = selected_area
+                    else:
+                        if selected_area != "Tous les départements":
+                            params["departement"] = selected_area
+                    
+                    # Ajout de la pathologie si sélectionnée
+                    if selected_pathology != "Toutes les pathologies":
+                        params["pathologie"] = selected_pathology
+                    
+                    # Construction de l'URL avec la page correspondante
+                    base_url = f"http://localhost:8501/{target_page}"
+                    query_string = urlencode(params)
+                    url = f"{base_url}?{query_string}"
+                    
+                    # Ouvrir dans un nouvel onglet
+                    webbrowser.open_new_tab(url)
+                else:
+                    st.error(f"Pas de page détaillée disponible pour le service {selected_service}")
+                    
     # Création des onglets après les filtres
     tab1, tab2 = st.tabs([
         "🗺️ Zoom sur la France",
-        "🏥 Zoom sur les territoires",
+        ".",
     ])
 
     with tab1:
@@ -308,6 +419,7 @@ if df is not None:
                 📊 Informations affichées :
                 - Nombre total d'hospitalisations
                 - Durée moyenne de séjour
+                - Taux standardisé moyen
                 - Top pathologies par territoire
                 
                 🎨 Les couleurs plus foncées indiquent un nombre plus élevé d'hospitalisations."""
