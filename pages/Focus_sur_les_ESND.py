@@ -36,6 +36,13 @@ st.markdown ("""
     </style>
 """, unsafe_allow_html=True)
 
+# Récupération des paramètres d'URL
+params = st.query_params
+pre_selected_service = params.get("service")
+pre_selected_pathologie = params.get("pathologie")
+pre_selected_annee = params.get("annee")
+
+
 # Titre principal
 st.markdown ("<h1 class='main-title' style='margin-top: -70px;'>🏥 Service ESND (Établissements de soins longue durée)</h1>", unsafe_allow_html=True)
 
@@ -79,47 +86,81 @@ def format_number(number):
         return str(number)
 
 if df is not None:
-    # Remplacement des valeurs nulles pour la Covid en 2018-2019
-    # mask_covid = (df_pathologie_hospi['nom_pathologie'] == 'Infection à coronavirus (COVID-19)') & (df['annee'].isin([2018, 2019]))
-    # df.loc[mask_covid, ['nbr_hospi', 'AVG_duree_hospi', 'indice_comparatif_tt_age_percent']] = 0
+    # Récupérer les paramètres de l'URL si présents
+    params = st.query_params
     
+    # Récupération des valeurs uniques pour les filtres
+    sexe_options = ["Ensemble", "Femme", "Homme"]
+    years = sorted(df['annee'].unique(), reverse=True)
+    years_options = ["Toutes les années"] + [str(year) for year in years]
+    regions = sorted(df['nom_region'].unique())
+    regions_options = ["Tous les départements"] + regions
+    
+    # Récupération des paramètres avec validation
+    default_sexe = params.get('sexe', 'Ensemble')
+    if default_sexe not in sexe_options:
+        default_sexe = 'Ensemble'
+        
+    default_annee = params.get('annee', 'Toutes les années')
+    if default_annee not in years_options:
+        default_annee = 'Toutes les années'
+    
+    # Gestion du département sélectionné
+    default_departement = params.get('departement')
+    if default_departement:
+        # Si un département est spécifié, on le cherche dans les données
+        if default_departement in regions:
+            default_region = default_departement
+        else:
+            default_region = 'Tous les départements'
+    else:
+        default_region = params.get('region', 'Tous les départements')
+        if default_region not in regions_options:
+            default_region = 'Tous les départements'
+
     # Filtres principaux en colonnes
     col1, col2, col3 = st.columns(3)
 
     with col1:
         # Sélection du sexe
-        selected_sex = st.selectbox(
+        selected_sexe = st.selectbox(
             "Sexe",
-            ["Ensemble", "Femme","Homme"],
-            key="selecteur_sexe_esnd"
+            sexe_options,
+            key="selecteur_sexe_esnd",
+            index=sexe_options.index(default_sexe)
         )
 
     with col2:
-        # Filtre année avec une liste déroulante simple
-        years = sorted(df['annee'].unique(), reverse=True)
-        years_options = ["Toutes les années"] + [str(year) for year in years]
+        # Filtre année
         selected_year = st.selectbox(
             "Année", 
             years_options, 
-            key="year_filter_esnd"
+            key="year_filter_esnd",
+            index=years_options.index(default_annee)
         )
         
     with col3:
-        # Sélection de la départements
-        regions = sorted(df['nom_region'].unique())
-        regions_options = ["Tous les départements"] + regions
+        # Sélection du département
         selected_region = st.selectbox(
             "Départements",
             regions_options,
-            key="region_filter_esnd"
+            key="region_filter_esnd",
+            index=regions_options.index(default_region)
         )
     
+    # Mettre à jour les paramètres de l'URL
+    st.query_params.update({
+        'sexe': selected_sexe,
+        'annee': str(selected_year),
+        'region': selected_region
+    })
+
     # Filtrage des données selon les sélections
     df_filtered = df.copy()
     
     # Filtre par sexe
-    if selected_sex != "Ensemble":
-        df_filtered = df_filtered[df_filtered['sexe'] == selected_sex]
+    if selected_sexe != "Ensemble":
+        df_filtered = df_filtered[df_filtered['sexe'] == selected_sexe]
         
     # Filtre par année
     if selected_year != "Toutes les années":
@@ -132,22 +173,28 @@ if df is not None:
     # Liste déroulante de toutes les pathologies
     all_pathologies = sorted(df_filtered['nom_pathologie'].unique())
     all_pathologies.insert(0, "Toutes les pathologies")  # Ajout de l'option pour toutes les pathologies
+    
+    # Utiliser la pathologie pré-sélectionnée si elle existe
+    default_pathologie = params.get('pathologie', 'Toutes les pathologies')
+    pathologie_index = all_pathologies.index(default_pathologie) if default_pathologie in all_pathologies else 0
+    
     selected_pathology = st.selectbox(
         "🔍 Sélectionner une pathologie en ESND pour obtenir des détails",
         all_pathologies,
-        key="pathology_selector_esnd"
+        key="pathology_selector_esnd",
+        index=pathologie_index
     )
         # Filtre par pathologie
 
     # Afficher les données pour la pathologie sélectionnée
     if selected_pathology == "Toutes les pathologies":
         path_data = df_filtered[
-            (df_filtered['sexe'] == selected_sex)
+            (df_filtered['sexe'] == selected_sexe)
         ]
     else:
         path_data = df_filtered[
             (df_filtered['nom_pathologie'] == selected_pathology) &
-            (df_filtered['sexe'] == selected_sex)
+            (df_filtered['sexe'] == selected_sexe)
         ]
     
     # Calcul des métriques avec les filtres appliqués
@@ -156,12 +203,12 @@ if df is not None:
     # Calcul de la durée moyenne en fonction de la sélection
     if selected_pathology == "Toutes les pathologies":
         avg_duration = df_filtered[
-            (df_filtered['sexe'] == selected_sex)
+            (df_filtered['sexe'] == selected_sexe)
         ]['AVG_duree_hospi'].mean()
     else:
         avg_duration = df_filtered[
             (df_filtered['nom_pathologie'] == selected_pathology) &
-            (df_filtered['sexe'] == selected_sex)
+            (df_filtered['sexe'] == selected_sexe)
         ]['AVG_duree_hospi'].mean()
     
     col1, col2, col3, col4, col5 = st.columns(5)
@@ -192,7 +239,7 @@ if df is not None:
 
     with tab1:
         # Ajout d'un sélecteur pour filtrer le nombre de pathologies à afficher
-        n_pathologies = st.slider("Nombre de pathologies à afficher", 5, 5, 5)
+        n_pathologies = st.slider("Nombre de pathologies à afficher", 1, 5, 5)
         
         # Top pathologies par nombre d'hospitalisations
         hospi_by_pathology = df_filtered.groupby('nom_pathologie').agg({
@@ -981,8 +1028,8 @@ if df is not None:
                     'value': 'Nombre de lits et places',
                     'variable': 'Nombre',
                     'annee': 'Année',
-                    'lit_hospi_complete': '1 jour et plus',
-                    'place_hospi_partielle': '24 h',
+                    'lit_hospi_complete': "1 jour et plus",
+                    'place_hospi_partielle': "24 h",
                 },
                 color_discrete_map={
                     'lit_hospi_complete': '#6fffe9',
