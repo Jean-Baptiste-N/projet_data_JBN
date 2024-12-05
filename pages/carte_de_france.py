@@ -36,29 +36,19 @@ st.markdown("""
     }
     .custom-button {
         background-color: #f0f2f6;
-        color: #1f77b4;
-        border: 1px solid #1f77b4;
+        color: #f0f2f6;
         border-radius: 4px;
         padding: 0.5rem 1rem;
         font-size: 0.9rem;
         transition: all 0.3s ease;
     }
     .custom-button:hover {
-        background-color: #1f77b4;
+        background-color: #f0f2f6;
         color: white;
         cursor: pointer;
     }
-    div[data-testid="stButton"] button {
-        background-color: #f0f2f6;
-        color: #1f77b4;
-        border: 1px solid #1f77b4;
-        border-radius: 4px;
-        padding: 0.5rem 1rem;
-        font-size: 0.9rem;
-        transition: all 0.3s ease;
-    }
     div[data-testid="stButton"] button:hover {
-        background-color: #1f77b4;
+        background-color: #1f77b1;
         color: white;
     }
     </style>
