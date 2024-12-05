@@ -6,8 +6,6 @@ import pandas as pd
 import plotly.express as px
 from google.cloud import bigquery
 import numpy as np
-import webbrowser
-from urllib.parse import urlencode
 
 MAIN_COLOR = "#FF4B4B"
 
@@ -33,33 +31,6 @@ st.markdown("""
         background-color: #f8f9fa;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         margin-bottom: 1rem;
-    }
-    .custom-button {
-        background-color: #f0f2f6;
-        color: #1f77b4;
-        border: 1px solid #1f77b4;
-        border-radius: 4px;
-        padding: 0.5rem 1rem;
-        font-size: 0.9rem;
-        transition: all 0.3s ease;
-    }
-    .custom-button:hover {
-        background-color: #1f77b4;
-        color: white;
-        cursor: pointer;
-    }
-    div[data-testid="stButton"] button {
-        background-color: #f0f2f6;
-        color: #1f77b4;
-        border: 1px solid #1f77b4;
-        border-radius: 4px;
-        padding: 0.5rem 1rem;
-        font-size: 0.9rem;
-        transition: all 0.3s ease;
-    }
-    div[data-testid="stButton"] button:hover {
-        background-color: #1f77b4;
-        color: white;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -237,25 +208,15 @@ def show_map(df_filtered, niveau_administratif, selected_service, sexe, annee):
 # Chargement des données
 df = load_data()
 
-# Mapping des services vers les pages Focus correspondantes
-SERVICE_TO_PAGE = {
-    'ESND': 'Focus_sur_les_ESND',
-    'SSR': 'Focus_sur_les_ssr',
-    'PSY': 'Focus_sur_la_psy',
-    'M': 'Focus_sur_la_medecine',
-    'C': 'Focus_sur_la_chirurgie',
-    'O': 'Focus_sur_l\'obstetrique'  # Ajout de la correspondance pour le code 'O'
-}
-
 if df is not None:
     # Création de colonnes pour les filtres
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, = st.columns(3)
     
     with col1:
         # Sélection du niveau administratif
         niveau_administratif = st.selectbox(
             "Niveau administratif",
-            ["Départements"]
+            ["Régions", "Départements"]
         )
 
     with col2:
@@ -267,48 +228,19 @@ if df is not None:
     
     with col3:
         # Sélection de l'année
-        years = sorted(df['annee'].unique())
+        years = sorted(df['year'].unique())
         years.insert(0, "Toutes les années")
         selected_year = st.selectbox("Année", years)
     
-    # Filtrer les données par année et sexe
+    # Filtrer les données
     if selected_year != "Toutes les années":
-        df_filtered = df[df['annee'] == selected_year]
+        df_filtered = df[df['year'] == selected_year]
     else:
         df_filtered = df.copy()
     
     if sexe != "Ensemble":
         df_filtered = df_filtered[df_filtered['sexe'] == sexe]
-
-    # Filtrer d'abord par niveau administratif
-    df_filtered = df_filtered[df_filtered['niveau'] == niveau_administratif]
-    with col4:
-    # Ajout du sélecteur de région/département
-        if niveau_administratif == "Régions":
-            regions = sorted(df_filtered['nom_region'].unique())
-            regions.insert(0, "Toutes les régions")
-            selected_area = st.selectbox(
-                "Sélectionner une région",
-                regions,
-                key="region_selector"
-            )
-            
-            # Appliquer le filtre de région
-            if selected_area != "Toutes les régions":
-                df_filtered = df_filtered[df_filtered['nom_region'] == selected_area]
-        else:
-            departements = sorted(df_filtered['nom_region'].unique())  # On utilise toujours nom_region mais après avoir filtré par niveau
-            departements.insert(0, "Tous les départements")
-            selected_area = st.selectbox(
-                "Sélectionner un département",
-                departements,
-                key="departement_selector"
-            )
-            
-            # Appliquer le filtre de département
-            if selected_area != "Tous les départements":
-                df_filtered = df_filtered[df_filtered['nom_region'] == selected_area]
-            
+        
     col1, col2 = st.columns(2)
     
     with col1:
@@ -348,48 +280,9 @@ if df is not None:
     if selected_pathology != "Toutes les pathologies":
         df_filtered = df_filtered[df_filtered['nom_pathologie'] == selected_pathology]
 
-    # Ajout du bouton "Voir plus de détails" si un service est sélectionné
-    if selected_service != "Tous":
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            if st.button("👉 Voir plus de détails", use_container_width=False):
-                # Obtenir la page correspondante au service
-                target_page = SERVICE_TO_PAGE.get(selected_service)
-                
-                if target_page:
-                    # Préparation des paramètres avec les valeurs actuellement sélectionnées
-                    params = {
-                        "sexe": sexe,
-                        "annee": selected_year,
-                        "departement": "Tous les départements"  # Valeur par défaut
-                    }
-                    
-                    # Ajout de la région/département sélectionné
-                    if niveau_administratif == "Régions":
-                        if selected_area != "Toutes les régions":
-                            params["region"] = selected_area
-                    else:
-                        if selected_area != "Tous les départements":
-                            params["departement"] = selected_area
-                    
-                    # Ajout de la pathologie si sélectionnée
-                    if selected_pathology != "Toutes les pathologies":
-                        params["pathologie"] = selected_pathology
-                    
-                    # Construction de l'URL avec la page correspondante
-                    base_url = f"http://localhost:8501/{target_page}"
-                    query_string = urlencode(params)
-                    url = f"{base_url}?{query_string}"
-                    
-                    # Ouvrir dans un nouvel onglet
-                    webbrowser.open_new_tab(url)
-                else:
-                    st.error(f"Pas de page détaillée disponible pour le service {selected_service}")
-                    
     # Création des onglets après les filtres
-    tab1, tab2 = st.tabs([
-        "🗺️ Hospitalisations en France",
-        "🏥 Taux de recours et capacités en soins",
+    tab1= st.tabs([
+        "🗺️ Zoom sur la France",
     ])
 
     with tab1:
@@ -404,7 +297,7 @@ if df is not None:
             st.metric(
                 label="help",
                 value="",
-                help="""Cette carte interactive vous permet de visualiser la distribution des hosptalisations en France.
+                help="""Cette carte interactive vous permet de visualiser la distribution des hospitalisations en France.
                 
                 🔍 Navigation :
                 - Zoomez avec la molette de la souris
@@ -413,35 +306,10 @@ if df is not None:
                 
                 📊 Informations affichées :
                 - Nombre total d'hospitalisations
+                - Taux standardisé de recours
                 
                 🎨 Les couleurs plus foncées indiquent un nombre plus élevé d'hospitalisations."""
             )
 
-    with tab2:
-        # Générer et afficher la carte
-         = show_map(df_, niveau_administratif, selected_service, sexe, selected_year)
-        
-        # Afficher la carte
-        col_chart, col_help = st.columns([1, 0.01])
-        with col_chart:
-            st_folium(m, width=1200, height=800)
-        with col_help:
-            st.metric(
-                label="help",
-                value="",
-                help="""Cette carte interactive vous permet de visualiser la distribution des taux de recours et des taux d'équipement en France.
-                
-                🔍 Navigation :
-                - Zoomez avec la molette de la souris
-                - Cliquez et faites glisser pour vous déplacer
-                - Survolez une région pour voir les détails
-                
-                📊 Informations affichées :
-                - Taux standardisé de recours aux soins, en %
-                - Taux d'équipement, en lits pour 1000 habitants
-                
-                🎨 Les couleurs plus foncées indiquent un nombre plus élevé d'hospitalisations."""
-            )
-    
     st.markdown("---")
     st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")
