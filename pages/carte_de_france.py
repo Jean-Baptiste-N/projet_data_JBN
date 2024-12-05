@@ -244,12 +244,12 @@ df = load_data()
 
 # Mapping des services vers les pages Focus correspondantes
 SERVICE_TO_PAGE = {
-    'ESND': 'Focus_sur_les_ESND',
-    'SSR': 'Focus_sur_les_ssr',
-    'PSY': 'Focus_sur_la_psy',
-    'M': 'Focus_sur_la_medecine',
-    'C': 'Focus_sur_la_chirurgie',
-    'O': 'Focus_sur_l\'obstetrique'  # Ajout de la correspondance pour le code 'O'
+    'ESND': 'esnd',
+    'SSR': 'ssr',
+    'PSY': 'psy',
+    'M': 'medecine',
+    'C': 'chirurgie',
+    'O': 'obstetrique'  # Ajout de la correspondance pour le code 'O'
 }
 
 if df is not None:
