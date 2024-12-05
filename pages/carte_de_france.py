@@ -134,7 +134,7 @@ def get_highlight_function(x):
 
 def generate_map(map_data, geojson_data, niveau_administratif, df_filtered, sexe, annee, service):
     # Créer la carte de base
-    m = folium.Map(location=[46.603354, 1.888334], zoom_start=6, tiles='Stadia.AlidadeSatellite')
+    m = folium.Map(location=[46.603354, 1.888334], zoom_start=6)
 
     # Convertir les données en DataFrame pour Folium
     df_map = pd.DataFrame(list(map_data.items()), columns=['territoire', 'nbr_hospi'])
