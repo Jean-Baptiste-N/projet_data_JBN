@@ -299,164 +299,108 @@ if df_nbr_hospi is not None:
         "🗺️ Analyse géographique",
         "🏥 Pathologies",
         "👥 Démographie",
-        "Services Médicaux"
+        "🏥 Services Médicaux"
 
     ])
     
     # Vue Générale
-    with tab1:
-        st.markdown("""
-            <div class="insight-card">
-            <h3>📈 Évolution des hospitalisations et capacités</h3>
-            <p>Suivez l'évolution du nombre d'hospitalisations et des capacités d'accueil au fil des années.
-            Les indicateurs clés vous permettent de comprendre les tendances et les changements majeurs.</p>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        st.subheader("Nombre d'hospitalisations par années")
-        
+    with tab1:        
         # Affichage des métriques dans des cartes stylisées
-        col1, col2, col3, col4, col5 = st.columns(5)
+        col1, col2 = st.columns(2)
         
         with col1:
-            value_2019 = main_metrics["hospi_2019"]
             value_2018 = main_metrics["hospi_2018"]
-            delta_2019 = ((value_2019 - value_2018) / value_2018) * 100
-            st.metric(
-                label="2019",
-                value=f"{value_2019 / 1_000_000:.2f}M",
-                delta=f"{delta_2019:.2f}% vs 2018",
-                help="Nombre total d'hospitalisations en 2019 et variation par rapport à 2018"
-            )
-        with col2:
-            value_2020 = main_metrics["hospi_2020"]
-            delta_2020 = ((value_2020 - value_2019) / value_2019) * 100
-            st.metric(
-                label="2020",
-                value=f"{value_2020 / 1_000_000:.2f}M",
-                delta=f"{delta_2020:.2f}% vs 2019",
-                help="Nombre total d'hospitalisations en 2020 et variation par rapport à 2019"
-            )
-        with col3:
-            value_2021 = main_metrics["hospi_2021"]
-            delta_2021 = ((value_2021 - value_2020) / value_2020) * 100
-            st.metric(
-                label="2021",
-                value=f"{value_2021 / 1_000_000:.2f}M",
-                delta=f"{delta_2021:.2f}% vs 2020",
-                help="Nombre total d'hospitalisations en 2021 et variation par rapport à 2020"
-            )
-        with col4:
             value_2022 = main_metrics["hospi_2022"]
-            delta_2022 = ((value_2022 - value_2021) / value_2021) * 100
-            st.metric(
-                label="2022",
-                value=f"{value_2022 / 1_000_000:.2f}M",
-                delta=f"{delta_2022:.2f}% vs 2021",
-                help="Nombre total d'hospitalisations en 2022 et variation par rapport à 2021"
-            )
-        with col5:
-            value_2022_2018 = value_2022 - value_2018  # Calcul du nombre de lits perdus
+            value_2022_2018 = value_2022 - value_2018
             delta_total = ((value_2022 - value_2018) / value_2018) * 100
-            st.metric(
-                label="Évolution 2018-2022",
-                value=f"+{value_2022_2018 / 1_000:.2f}K",
-                delta=f"{delta_total:.2f}% vs 2018",
-                help="Évolution du nombre total d'hospitalisations entre 2018 et 2022"
-            )
+            
+            st.markdown(f"""
+                <div class="insight-card" style="background: white; padding: 20px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); min-width: 400px;">
+                    <h3 style="color: #333; font-size: 1.2rem; margin-bottom: 15px; white-space: nowrap; text-align: center;">Évolution des hospitalisations</h3>
+                    <div style="display: flex; justify-content: center; gap: 40px;">
+                        <div style="flex: 0 1 auto; text-align: center;">
+                            <div style="font-size: 0.9rem; color: #666;">Nomber d'hospitalisations en 2022</div>
+                            <div style="font-size: 2.5rem; margin: 5px 0;">{value_2022 / 1_000_000:.2f}M</div>
+                        </div>
+                        <div style="flex: 0 1 auto; text-align: center;">
+                            <div style="font-size: 0.9rem; color: #666;">Évolution 2018-2022</div>
+                            <div style="font-size: 2.5rem; margin: 5px 0;">+{value_2022_2018 / 1_000:.2f}K</div>
+                            <div style="color: #2fba3d; font-size: 0.9rem;">↑ {delta_total:.2f}% vs 2018</div>
+                        </div>
+                    </div>
+                </div>  
+            """, unsafe_allow_html=True)
+            
+        with col2:
+            value_2018_lits = main_metrics["lits_2018"]
+            value_2019_lits = main_metrics["lits_2019"]
+            value_2022_lits = main_metrics["lits_2022"]
+            lits_perdus = value_2018_lits - value_2022_lits
+            delta_total_lits = ((value_2022_lits - value_2018_lits) / value_2018_lits) * 100
+
+            st.markdown(f"""
+                <div class="insight-card" style="background: white; padding: 20px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); min-width: 400px;">
+                    <h3 style="color: #333; font-size: 1.2rem; margin-bottom: 15px; white-space: nowrap; text-align: center;">Évolution de la capacité en lit</h3>
+                    <div style="display: flex; justify-content: center; gap: 40px;">
+                        <div style="flex: 0 1 auto; text-align: center;">
+                            <div style="font-size: 0.9rem; color: #666;">Nombe de lits disponible en 2022</div>
+                            <div style="font-size: 2.5rem; margin: 5px 0;">{value_2022_lits / 1_000:.2f}K</div>
+                        </div>
+                        <div style="flex: 0 1 auto; text-align: center;">
+                            <div style="font-size: 0.9rem; color: #666;">Évolution 2018-2022</div>
+                            <div style="font-size: 2.5rem; margin: 5px 0;">-{lits_perdus / 1_000:.2f}K</div>
+                            <div style="color: #d63b18; font-size: 0.9rem;">↓ {delta_total_lits:.2f}% vs 2018</div>
+                        </div>
+                    </div>
+                </div>  
+            """, unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
         # Affichage des lits disponibles
-        st.subheader("Nombre de lits disponibles par années")
-        col1, col2, col3, col4, col5 = st.columns(5)
-        with col1:
-            value_2019_lits = main_metrics["lits_2019"]
-            value_2018_lits = main_metrics["lits_2018"]
-            delta_2019_lits = ((value_2019_lits - value_2018_lits) / value_2018_lits) * 100
-            st.metric(
-                label="2019",
-                value=f"{value_2019_lits / 1_000:.2f}K",
-                delta=f"{delta_2019_lits:.2f}% vs 2018",
-                help="Nombre total de lits disponibles en 2019 et variation par rapport à 2018"
-            )
-        with col2:
-            value_2020_lits = main_metrics["lits_2020"]
-            delta_2020_lits = ((value_2020_lits - value_2019_lits) / value_2019_lits) * 100
-            st.metric(
-                label="2020",
-                value=f"{value_2020_lits / 1_000:.2f}K",
-                delta=f"{delta_2020_lits:.2f}% vs 2019",
-                help="Nombre total de lits disponibles en 2020 et variation par rapport à 2019"
-            )
-        with col3:
-            value_2021_lits = main_metrics["lits_2021"]
-            delta_2021_lits = ((value_2021_lits - value_2020_lits) / value_2020_lits) * 100
-            st.metric(
-                label="2021",
-                value=f"{value_2021_lits / 1_000:.2f}K",
-                delta=f"{delta_2021_lits:.2f}% vs 2020",
-                help="NoKbre total de lits disponibles en 2021 et variation par rapport à 2020"
-            )
-        with col4:
-            value_2022_lits = main_metrics["lits_2022"]
-            delta_2022_lits = ((value_2022_lits - value_2021_lits) / value_2021_lits) * 100
-            st.metric(
-                label="2022",
-                value=f"{value_2022_lits / 1_000:.2f}K",
-                delta=f"{delta_2022_lits:.2f}% vs 2021",
-                help="Nombre total de lits disponibles en 2022 et variation par rapport à 2021"
-            )
-        with col5:
-            lits_perdus = value_2018_lits - value_2022_lits  # Calcul du nombre de lits perdus
-            delta_total_lits = ((value_2022_lits - value_2018_lits) / value_2018_lits) * 100
-            st.metric(
-                label="Évolution 2018-2022",
-                value=f"-{lits_perdus / 1_000:.2f}K",  # Affichage en milliers
-                delta=f"{delta_total_lits:.2f}% vs 2018",
-                help="Nombre de lits perdus entre 2018 et 2022 et pourcentage de diminution"
-            )
-
 
         # Graph 1 Préparation des données
         hospi_by_year = df_nbr_hospi_filtered.groupby('year')['nbr_hospi'].sum().reset_index()
         duree_by_year = df_duree_hospi_filtered.groupby('year')['AVG_duree_hospi'].mean().reset_index()
-        
-        # Création du graphique combiné
-        fig = go.Figure()
 
-        # Ajout des barres pour le nombre d'hospitalisations
-        fig.add_trace(
-            go.Bar(
-                x=hospi_by_year['year'],
-                y=hospi_by_year['nbr_hospi'],
-                name="Nombre d'hospitalisations",
-                yaxis='y',
-                marker_color=MAIN_COLOR,
-                hovertemplate="<b>Année:</b> %{x|%Y}<br>" +
-                             "<b>Hospitalisations:</b> %{y:,.0f}<br><extra></extra>"
-            )
+        capacite_by_year = df_capacite_hospi_filtered.groupby('year')[['lit_hospi_complete','place_hospi_partielle','passage_urgence']].sum().reset_index()
+        capacite_by_year['capacite_totale'] = capacite_by_year['lit_hospi_complete'] + capacite_by_year['place_hospi_partielle']
+
+        # Création du graphique pour les barres
+        fig = px.bar(
+            data_frame=pd.concat([
+                hospi_by_year.assign(Type="Nombre d'hospitalisations", value=lambda x: x['nbr_hospi']),
+            ]),
+            x='year',
+            y='value',
+            color='Type',
+            barmode='group',
+            color_discrete_map={
+                "Nombre d'hospitalisations": MAIN_COLOR,
+                "Capacité en Lits (>24h)": SECONDARY_COLOR
+            }
         )
 
         # Ajout de la ligne pour la durée moyenne
-        fig.add_trace(
-            go.Scatter(
-                x=duree_by_year['year'],
-                y=duree_by_year['AVG_duree_hospi'],
-                name="Durée moyenne",
-                yaxis='y2',
-                line=dict(color=SECONDARY_COLOR, width=3),
-                hovertemplate="<b>Année:</b> %{x|%Y}<br>" +
-                             "<b>Durée moyenne:</b> %{y:.1f} jours<br><extra></extra>"
-            )
+        fig.add_scatter(
+            x=duree_by_year['year'],
+            y=duree_by_year['AVG_duree_hospi'],
+            name="Durée moyenne",
+            yaxis='y2',
+            line=dict(color=SECONDARY_COLOR, width=3),
+            mode='lines+markers+text',
+            text=duree_by_year['AVG_duree_hospi'].round(1),
+            textposition='top center',
+            hovertemplate="<b>Année:</b> %{x|%Y}<br><b>Durée moyenne:</b> %{y:.1f} jours<br><extra></extra>"
         )
 
         # Mise à jour de la mise en page
         fig.update_layout(
             title="Évolution des hospitalisations et de leur durée moyenne",
             yaxis=dict(
-                title="Nombre d'hospitalisations",
+                title="Nombre d'hospitalisations et capacité",
                 titlefont=dict(color=MAIN_COLOR),
                 tickfont=dict(color=MAIN_COLOR),
-                showgrid=True
+                showgrid=True,
+                range=[0, max(max(hospi_by_year['nbr_hospi']), max(capacite_by_year['capacite_totale'])) * 1.1]  # Ajuster l'échelle avec 10% de marge
             ),
             yaxis2=dict(
                 title="Durée moyenne (jours)",
@@ -480,7 +424,6 @@ if df_nbr_hospi is not None:
             ),
             hovermode='x unified',
             hoverlabel=dict(bgcolor="white"),
-            barmode='relative',
             template='plotly_white'
         )
 
@@ -492,58 +435,47 @@ if df_nbr_hospi is not None:
             st.metric(label="help", value="", help="Ce graphique combine le nombre total d'hospitalisations (barres bleues) et la durée moyenne de séjour (ligne verte) par année. Passez votre souris sur les éléments du graphique pour voir les détails.")
         
         # Graph 2 Préparation des données
-        capacite_by_year = df_capacite_hospi_filtered.groupby('year')[['lit_hospi_complete','place_hospi_partielle','passage_urgence']].sum().reset_index()
         
-        # Création du graphique combiné
-        fig2 = go.Figure()
+        # Création du graphique pour les barres
+        fig2 = px.bar(
+            data_frame=pd.concat([
+                capacite_by_year.assign(Type="Capacité en Lits (>24h)", value=lambda x: x['lit_hospi_complete']),
+                capacite_by_year.assign(Type="Capacité en Places (<24h)", value=lambda x: x['place_hospi_partielle'])
+            ]),
+            x='year',
+            y='value',
+            color='Type',
+            barmode='group',
+            color_discrete_map={
+                "Capacité en Lits (>24h)": SECONDARY_COLOR,
+                "Capacité en Places (<24h)": ACCENT_COLOR
+            }
+        )
 
-        # Ajout des barres pour le nombre d'hospitalisations
-        fig2.add_trace(
-            go.Bar(
-                x=capacite_by_year['year'],
-                y=capacite_by_year['lit_hospi_complete'],
-                name="Capacité en Lits (>24h)",
-                yaxis='y',
-                marker_color=SECONDARY_COLOR,
-                hovertemplate="<b>Année:</b> %{x|%Y}<br>" +
-                             "<b>Lits:</b> %{y:,.0f}<br><extra></extra>"
-            )
-        )
-        fig2.add_trace(
-            go.Bar(
-                x=capacite_by_year['year'],
-                y=capacite_by_year['place_hospi_partielle'],
-                name="Capacité en Places (<24h)",
-                yaxis='y',
-                marker_color=ACCENT_COLOR,
-                hovertemplate="<b>Année:</b> %{x|%Y}<br>" +
-                             "<b>Places:</b> %{y:,.0f}<br><extra></extra>"
-            )
-        )
-        # Ajout de la ligne pour la durée moyenne
-        fig2.add_trace(
-            go.Scatter(
-                x=capacite_by_year['year'],
-                y=capacite_by_year['passage_urgence'],
-                name="Passages aux urgences mesurés",
-                yaxis='y2',
-                line=dict(color=MAIN_COLOR, width=3),
-                hovertemplate="<b>Année:</b> %{x|%Y}<br>" +
-                             "<b>Passages Urgences:</b> %{y:.1f}<br><extra></extra>"
-            )
+        # Ajout de la ligne pour les passages aux urgences
+        fig2.add_scatter(
+            x=capacite_by_year['year'],
+            y=capacite_by_year['passage_urgence'],
+            name="Passages aux urgences mesurés",
+            yaxis='y2',
+            line=dict(color=MAIN_COLOR, width=3),
+            mode='lines+markers+text',
+            text=capacite_by_year['passage_urgence'].round(0),
+            textposition='top center',
+            hovertemplate="<b>Année:</b> %{x|%Y}<br><b>Passages Urgences:</b> %{y:,.0f}<br><extra></extra>"
         )
 
         # Mise à jour de la mise en page
         fig2.update_layout(
-            title="Évolution des Capacités hospitalières en Lits et Places, et des passages aux urgences",
+            title="Évolution des capacités d'accueil et des passages aux urgences",
             yaxis=dict(
-                title="Capacité des hospitalisations",
+                title="Nombre de lits et places",
                 titlefont=dict(color=SECONDARY_COLOR),
                 tickfont=dict(color=SECONDARY_COLOR),
                 showgrid=True
             ),
             yaxis2=dict(
-                title="Capacité des Urgences",
+                title="Nombre de passages aux urgences",
                 titlefont=dict(color=MAIN_COLOR),
                 tickfont=dict(color=MAIN_COLOR),
                 anchor="x",
@@ -564,7 +496,6 @@ if df_nbr_hospi is not None:
             ),
             hovermode='x unified',
             hoverlabel=dict(bgcolor="white"),
-            barmode='relative',
             template='plotly_white'
         )
 
@@ -573,19 +504,11 @@ if df_nbr_hospi is not None:
         with col_chart:
             st.plotly_chart(fig2, use_container_width=True)
         with col_help:
-            st.metric(label="help", value="", help="Ce graphique combine le nombre total d'hospitalisations (barres bleues) et la durée moyenne de séjour (ligne verte) par année. Passez votre souris sur les éléments du graphique pour voir les détails.")
-        
+            st.metric(label="help", value="", help="Ce graphique montre l'évolution des capacités d'accueil (barres) et des passages aux urgences (ligne). Les barres représentent la capacité en lits d'hospitalisation complète et en places d'hospitalisation partielle.")
 
     # Analyse Géographique
     with tab2:
-        st.markdown("""
-            <div class="insight-card">
-            <h3>🗺️ Répartition géographique</h3>
-            <p>Explorez la distribution des établissements et des hospitalisations à travers les régions françaises.
-            Identifiez les zones de forte concentration et les disparités territoriales.</p>
-            </div>
-        """, unsafe_allow_html=True)
-        
+
         col1, col2 = st.columns(2)
         with col1:
             # Adapter le groupby selon le niveau administratif
@@ -603,7 +526,7 @@ if df_nbr_hospi is not None:
                         orientation='h')
             fig.update_traces(
                 hovertemplate=f"<b>{territory_label.capitalize()}:</b> %{{customdata[0]}}<br>" +
-                             "<b>Hospitalisations:</b> %{customdata[1]:,.0f}<br><extra></extra>",
+                             "<b>Hospitalisations:</b> %{{customdata[1]:,.0f}}<br><extra></extra>",
                 marker_color=MAIN_COLOR
             )
             fig.update_layout(height=600, template='plotly_white')
@@ -1086,26 +1009,26 @@ if df_nbr_hospi is not None:
             st.metric(label="help", value="", help="Ce graphique 3D montre la distribution des hospitalisations par pathologie, durée moyenne de séjour et indice comparatif. Utilisez les contrôles pour faire pivoter et zoomer sur le graphique.")
 
         # Tableau récapitulatif détaillé
-        st.subheader("Évolution des pathologies (2018-2022)")
+        st.subheader("Évolution des pathologies - Augmentation les plus importantes (2018-2022)")
         
         # Calculer les évolutions année par année
         evolutions_by_year = {}
-        years = sorted(df_nbr_hospi['year'].dt.year.unique())
+        years = sorted(df_filtered['annee'].unique())
         
         for i in range(len(years)-1):
             current_year = years[i]
             next_year = years[i+1]
             
             # Données pour l'année courante et suivante
-            current_data = df_nbr_hospi[df_nbr_hospi['year'].dt.year == current_year].groupby('nom_pathologie')['nbr_hospi'].sum()
-            next_data = df_nbr_hospi[df_nbr_hospi['year'].dt.year == next_year].groupby('nom_pathologie')['nbr_hospi'].sum()
+            current_data = df_filtered[df_filtered['annee'] == current_year].groupby('nom_pathologie')['nbr_hospi'].sum()
+            next_data = df_filtered[df_filtered['annee'] == next_year].groupby('nom_pathologie')['nbr_hospi'].sum()
             
             # Calculer l'évolution en pourcentage
             evolution = ((next_data - current_data) / current_data * 100).fillna(0)
             evolutions_by_year[f'{current_year}-{next_year}'] = evolution
-        
+            
         # Créer le DataFrame de base avec le nombre total d'hospitalisations
-        df_summary = df_nbr_hospi.groupby('nom_pathologie')['nbr_hospi'].sum().reset_index()
+        df_summary = df_filtered.groupby('nom_pathologie')['nbr_hospi'].sum().reset_index()
         
         # Ajouter les évolutions année par année
         for period, evolution in evolutions_by_year.items():
@@ -1116,8 +1039,8 @@ if df_nbr_hospi is not None:
             )
         
         # Calculer l'évolution globale (2018-2022)
-        hospi_2018 = df_nbr_hospi[df_nbr_hospi['year'].dt.year == 2018].groupby('nom_pathologie')['nbr_hospi'].sum()
-        hospi_2022 = df_nbr_hospi[df_nbr_hospi['year'].dt.year == 2022].groupby('nom_pathologie')['nbr_hospi'].sum()
+        hospi_2018 = df_filtered[df_filtered['annee'] == min(years)].groupby('nom_pathologie')['nbr_hospi'].sum()
+        hospi_2022 = df_filtered[df_filtered['annee'] == max(years)].groupby('nom_pathologie')['nbr_hospi'].sum()
         evolution_globale = ((hospi_2022 - hospi_2018) / hospi_2018 * 100).fillna(0)
         
         # Ajouter l'évolution globale au DataFrame
@@ -1131,25 +1054,26 @@ if df_nbr_hospi is not None:
         df_summary = df_summary.sort_values('Evolution_globale', ascending=False)
         
         # Renommer les colonnes pour l'affichage
-        df_summary.columns = ['Pathologie', 'Hospitalisations'] + [f'Évol. {period} (%)' for period in evolutions_by_year.keys()] + ['Évol. 2018-2022 (%)']
+        df_summary.columns = ['Pathologie', 'Hospitalisations'] + [f'Évol. {period} (%)' for period in evolutions_by_year.keys()] + ['Évol. globale (%)']
         
         # Colonnes d'évolution pour le gradient
-        evolution_columns = ['Évol. 2018-2019 (%)', 'Évol. 2019-2020 (%)', 
-                           'Évol. 2020-2021 (%)', 'Évol. 2021-2022 (%)', 
-                           'Évol. 2018-2022 (%)']
-        
+        evolution_columns = [col for col in df_summary.columns if 'Évol.' in col]
+
+        # Filtrer les NaN avant de calculer min et max
+        evolution_values = df_summary[evolution_columns].values.flatten()
+        evolution_values = evolution_values[~pd.isna(evolution_values)]  # Supprime les NaN
+        vmin, vmax = evolution_values.min(), evolution_values.max()
+
         # Formater et afficher le tableau
         st.dataframe(
             df_summary.style.format({
                 'Hospitalisations': '{:,.0f}',
-                'Évol. 2018-2019 (%)': '{:+.1f}%',
-                'Évol. 2019-2020 (%)': '{:+.1f}%',
-                'Évol. 2020-2021 (%)': '{:+.1f}%',
-                'Évol. 2021-2022 (%)': '{:+.1f}%',
-                'Évol. 2018-2022 (%)': '{:+.1f}%'
+                **{col: '{:+.1f}%' for col in evolution_columns}
             }).background_gradient(
+                cmap='RdYlGn_r',
                 subset=evolution_columns,
-                cmap='RdYlBu_r'
+                vmin=vmin,
+                vmax=vmax
             ),
             use_container_width=True
         )
@@ -1157,26 +1081,31 @@ if df_nbr_hospi is not None:
         st.markdown("---")
         
         # Deuxième tableau avec les baisses en premier
-        st.subheader("Évolution des pathologies (2018-2022) - Baisses les plus importantes")
+        st.subheader("Évolution des pathologies - Baisses les plus importantes (2018-2022)")
         
         # Utiliser le même DataFrame mais trié dans l'ordre inverse
-        df_summary_desc = df_summary.sort_values('Évol. 2018-2022 (%)', ascending=True)
+        df_summary_desc = df_summary.sort_values('Évol. globale (%)', ascending=True)
         
+        # Filtrer les NaN avant de calculer min et max
+        evolution_values_desc = df_summary_desc[evolution_columns].values.flatten()
+        evolution_values_desc = evolution_values_desc[~pd.isna(evolution_values_desc)]  # Supprime les NaN
+        vmin_desc, vmax_desc = evolution_values_desc.min(), evolution_values_desc.max()
+
         # Afficher le deuxième tableau
         st.dataframe(
             df_summary_desc.style.format({
                 'Hospitalisations': '{:,.0f}',
-                'Évol. 2018-2019 (%)': '{:+.1f}%',
-                'Évol. 2019-2020 (%)': '{:+.1f}%',
-                'Évol. 2020-2021 (%)': '{:+.1f}%',
-                'Évol. 2021-2022 (%)': '{:+.1f}%',
-                'Évol. 2018-2022 (%)': '{:+.1f}%'
+                **{col: '{:+.1f}%' for col in evolution_columns}
             }).background_gradient(
+                cmap='RdYlGn_r',
                 subset=evolution_columns,
-                cmap='RdYlBu_r'
+                vmin=vmin_desc,
+                vmax=vmax_desc
             ),
             use_container_width=True
-        )
+        )        
+
+
         
     # Démographie
     with tab4:
