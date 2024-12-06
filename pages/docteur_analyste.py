@@ -48,7 +48,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Titre de la page
-st.markdown("<h1 class='main-title' style='margin-top: -70px;'>🤖 Assistant IA Médical</h1>", unsafe_allow_html=True)
+st.markdown("<h1 class='main-title' style='margin-top: -50px;'>🤖 Analyste IA</h1>", unsafe_allow_html=True)
 
 try:
     # Configuration Azure OpenAI
@@ -358,5 +358,9 @@ except ImportError as e:
 except Exception as e:
     st.error(f"Une erreur s'est produite : {str(e)}")
 
-    st.markdown("---")
-    st.markdown("Développé avec 💫 par l'équipe JBN | Le Wagon - Promotion 2024")
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    st.image("pages/gooey.ai - ultra detailed 8k cg hospital medical room equipment.png", width=600)
+    
+st.markdown("---")
+st.markdown("Développé avec 💫| Le Wagon - Batch #1834 - Promotion 2024")
