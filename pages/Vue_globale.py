@@ -508,14 +508,7 @@ if df_nbr_hospi is not None:
 
     # Analyse Géographique
     with tab2:
-        st.markdown("""
-            <div class="insight-card">
-            <h3>🗺️ Répartition géographique</h3>
-            <p>Explorez la distribution des établissements et des hospitalisations à travers les régions françaises.
-            Identifiez les zones de forte concentration et les disparités territoriales.</p>
-            </div>
-        """, unsafe_allow_html=True)
-        
+
         col1, col2 = st.columns(2)
         with col1:
             # Adapter le groupby selon le niveau administratif
